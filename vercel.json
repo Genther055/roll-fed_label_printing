@@ -7,12 +7,12 @@
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "source": "/api/:match*",
+      "destination": "/api/index.py?__path__=/api/:match*"
     },
     {
-      "source": "/download/(.*)",
-      "destination": "/api/index.py"
+      "source": "/download/:match*",
+      "destination": "/api/index.py?__path__=/download/:match*"
     }
   ]
 }

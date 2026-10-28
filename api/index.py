@@ -16,6 +16,24 @@ from core.pdf_imposer import generate_imposition_pdf
 
 app = Flask(__name__)
 
+class VercelPathMiddleware:
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        matched = environ.get("HTTP_X_MATCHED_PATH")
+        query = environ.get("QUERY_STRING", "")
+        if "__path__=" in query:
+            qs = urllib.parse.parse_qs(query)
+            if "__path__" in qs and qs["__path__"]:
+                matched = qs["__path__"][0]
+
+        if matched and matched not in ("/api/index.py", "/api/index"):
+            environ["PATH_INFO"] = matched
+        return self.wsgi_app(environ, start_response)
+
+app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
+
 SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
 
 # Vercel serverless has a read-only filesystem except /tmp
