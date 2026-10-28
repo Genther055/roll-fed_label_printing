@@ -244,10 +244,10 @@ def api_export_pdf():
     waste = data.get("waste", "5")
 
     try:
-        generate_imposition_pdf(
+        pdf_bytes = generate_imposition_pdf(
             source_file_path=src_path,
             layout_result=layout,
-            output_pdf_path=out_path,
+            output_pdf_path=None,
             original_filename=clean_name,
             add_eye_marks=data.get("add_eye_marks", True),
             add_cut_lines=data.get("add_cut_lines", True),
@@ -258,10 +258,14 @@ def api_export_pdf():
             circulation=circulation,
             waste=waste
         )
-        return jsonify({
-            "download_url": f"/download/{disk_name}",
-            "filename": download_name
-        })
+        response = Response(pdf_bytes, mimetype="application/pdf")
+        ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
+        quoted_utf8 = urllib.parse.quote(download_name)
+        response.headers["Content-Disposition"] = f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{quoted_utf8}'
+        response.headers["Content-Length"] = str(len(pdf_bytes))
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["X-Filename"] = quoted_utf8
+        return response
     except Exception as e:
         return jsonify({"error": f"PDF Export failed: {str(e)}"}), 500
 

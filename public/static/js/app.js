@@ -494,8 +494,8 @@ async function uploadFile(file) {
 }
 
 async function exportImpositionPdf() {
-  if (!currentFile || !currentLayout) {
-    alert('Спочатку завантажте або виберіть етикетку.');
+  if (!currentLayout) {
+    alert('Спочатку виберіть або розрахуйте розкладку.');
     return;
   }
 
@@ -513,9 +513,9 @@ async function exportImpositionPdf() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        filename: currentFile.filename,
+        filename: currentFile ? currentFile.filename : null,
         original_filename: cleanOriginalName,
-        type: currentFile.type,
+        type: currentFile ? currentFile.type : 'none',
         layout: currentLayout,
         circulation: circVal,
         waste: wasteVal,
@@ -526,17 +526,38 @@ async function exportImpositionPdf() {
         add_print_direction: false
       })
     });
-    const data = await res.json();
-    if (data.download_url) {
-      // Trigger download with clean filename
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(`Помилка експорту: ${err.error || res.statusText}`);
+      return;
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/pdf')) {
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = data.download_url;
-      link.download = data.filename || `${cleanOriginalName}.pdf`;
+      link.href = downloadUrl;
+      link.download = `${cleanOriginalName}.pdf`;
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      }, 1000);
     } else {
-      alert(`Помилка експорту: ${data.error}`);
+      const data = await res.json();
+      if (data.download_url) {
+        const link = document.createElement('a');
+        link.href = data.download_url;
+        link.download = data.filename || `${cleanOriginalName}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert(`Помилка експорту: ${data.error || 'Невідома помилка'}`);
+      }
     }
   } catch (err) {
     console.error('Export failed:', err);

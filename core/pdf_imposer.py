@@ -224,7 +224,7 @@ def generate_imposition_pdf(
         else:
             # Clean technical die-cut blank
             page1.draw_rect(target_rect, color=(0.9, 0.93, 0.98), fill=(1.0, 1.0, 1.0), width=0.3)
-            if cut_w_mm >= 10 and cut_h_mm >= 8:
+            if cut_w_mm >= 20 and cut_h_mm >= 14:
                 center_pt = pymupdf.Point(
                     (cut_x_mm + cut_w_mm / 2.0 - 5.5) * MM_TO_PT,
                     (cut_y_mm + cut_h_mm / 2.0 + 1.6) * MM_TO_PT
@@ -399,7 +399,10 @@ def generate_imposition_pdf(
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 131 * MM_TO_PT), "ROLL-PRINT CAD  •  Спуск рулонної етикетки на 1 погонний метр", fontname=fname_reg, fontsize=7, color=(0.55, 0.6, 0.68))
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 136 * MM_TO_PT), "Документ містить точні параметри для налаштування друкарської машини та виготовлення висічного ножа.", fontname=fname_reg, fontsize=6.5, color=(0.6, 0.65, 0.72))
 
-    doc.save(output_pdf_path)
+    if output_pdf_path:
+        doc.save(output_pdf_path, deflate=True, garbage=4, clean=True)
+    pdf_bytes = doc.tobytes(deflate=True, garbage=4, clean=True)
     doc.close()
     if src_doc:
         src_doc.close()
+    return pdf_bytes
