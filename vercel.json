@@ -1,8 +1,8 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/**/*.py": {
-      "includeFiles": ["samples/**", "core/**", "static/**", "index.html"]
+    "api/*.py": {
+      "includeFiles": "{samples/**,core/**,static/**,index.html}"
     }
   },
   "rewrites": [
@@ -13,14 +13,6 @@
     {
       "source": "/download/(.*)",
       "destination": "/api/index.py"
-    },
-    {
-      "source": "/static/(.*)",
-      "destination": "/static/$1"
-    },
-    {
-      "source": "/",
-      "destination": "/index.html"
     }
   ]
 }
