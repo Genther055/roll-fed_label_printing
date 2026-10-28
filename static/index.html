@@ -137,6 +137,14 @@
         </div>
       </div>
 
+      <!-- User Guide Button -->
+      <button id="btnUserGuide" type="button" class="cad-btn h-5.5 px-2 text-[10.5px] flex items-center gap-1 active:scale-95 whitespace-nowrap" title="Інструкція з використання">
+        <svg class="w-3 h-3 text-[#969696]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Як користуватись</span>
+      </button>
+
     </div>
 
     <!-- Telemetry Metrics -->
@@ -484,6 +492,96 @@
   <!-- Technical Passport Modal -->
   <div id="techPassportModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-[#242424] border border-[#383838] rounded-[4px] max-w-xl w-full p-5 shadow-2xl overflow-y-auto max-h-[90vh]" id="techPassportContent">
+    </div>
+  </div>
+
+  <!-- User Guide Modal -->
+  <div id="userGuideModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#242424] border border-[#383838] rounded-[4px] max-w-2xl w-full p-5 shadow-2xl overflow-y-auto max-h-[90vh] flex flex-col" id="userGuideContent">
+      <div class="flex items-start justify-between pb-3 border-b border-[#333333] mb-4">
+        <div>
+          <h3 class="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
+            <span>Інструкція користувача</span>
+            <span class="text-[9.5px] px-1.5 py-0.5 rounded bg-[#2e3440] text-[#81a1c1] font-mono font-normal">ROLL-PRINT CAD</span>
+          </h3>
+          <p class="text-[11px] text-[#888888] mt-0.5">Порядок роботи з розрахунком та спуском рулонної етикетки</p>
+        </div>
+        <button id="btnCloseUserGuide" type="button" class="text-[#888888] hover:text-white p-1 text-base leading-none transition" title="Закрити (Esc)">✕</button>
+      </div>
+
+      <div class="space-y-3.5 text-xs text-[#cccccc] leading-relaxed pr-1">
+        <!-- 1 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">1</span>
+            <span>Завантаження макету або вибір висічки</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            Перетягніть файл етикетки (PDF, PNG, JPG, TIFF) у ліву панель або виберіть готовий приклад зі списку зразків. Також можна працювати без макету — достатньо просто вказати розміри для формування чистого спуску контурів висічки.
+          </p>
+        </div>
+
+        <!-- 2 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">2</span>
+            <span>Параметри етикетки та полотна</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            Задайте ширину та висоту висічки у міліметрах (для круглих або квадратних етикеток ширина дорівнює висоті). Вкажіть вильоти під обріз (бліди). У параметрах полотна можна перевірити чи скоригувати ширину рулону (330 мм), робочу зону друку (305 мм) та зазори між етикетками (X / Y).
+          </p>
+        </div>
+
+        <!-- 3 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">3</span>
+            <span>Орієнтація та спосіб нанесення</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            <b>Ручне нанесення:</b> режим «Максимум (авто)» автоматично повертає етикетку на 0° або 90°, знаходячи варіант із найбільшим виходом штук на 1 метр. <b>Автоматичне нанесення:</b> оберіть потрібну схему намотки FINAT (№1–8) для маркувального автомата.
+          </p>
+        </div>
+
+        <!-- 4 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">4</span>
+            <span>Калькулятор тиражу та метражу</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            Введіть плановий тираж замовлення та відсоток приладки (наприклад, 5% або фіксовані метри). Програма автоматично підрахує чистий метраж, загальний метраж із приладкою, кількість рядів на рулоні та площу матеріалу в м².
+          </p>
+        </div>
+
+        <!-- 5 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">5</span>
+            <span>Контроль на полотні та шари</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            Використовуйте кнопки «Горизонтально» / «Вертикально» та масштабування (+ / - / «1 пог. м»). У випадаючому меню <b>«Шари»</b> можна перевіряти суміщення: контури різу, бліди, межі робочої зони 305 мм, фотометки датчика висічки та шкалу контролю фарб CMYK.
+          </p>
+        </div>
+
+        <!-- 6 -->
+        <div class="p-2.5 rounded bg-[#1e1e1e] border border-[#2e2e2e]">
+          <div class="font-semibold text-white text-[12px] mb-1 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-[#383838] text-[10px] flex items-center justify-center font-mono text-white">6</span>
+            <span>Експорт готового PDF та техпаспорт</span>
+          </div>
+          <p class="text-[#aaaaaa] text-[11px]">
+            Натисніть <b>«Експорт PDF»</b> — браузер миттєво збереже 2-сторінковий виробничий PDF (Стор. 1: точний спуск на 1 пог. метр для RIP/друку; Стор. 2: технічний паспорт замовлення). Кнопка <b>«Техпаспорт»</b> відкриває специфікацію для перегляду та швидкого друку на принтері.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-3 mt-4 border-t border-[#333333]">
+        <button id="btnConfirmUserGuide" type="button" class="cad-btn-primary px-4 py-1.5 text-xs font-semibold active:scale-95 transition">
+          Зрозуміло
+        </button>
+      </div>
     </div>
   </div>
 

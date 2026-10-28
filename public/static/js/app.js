@@ -455,6 +455,34 @@ function initUIEvents() {
     updateLayersCountBadge();
   });
 
+  // User Guide Modal
+  const userGuideModal = document.getElementById('userGuideModal');
+  const btnUserGuide = document.getElementById('btnUserGuide');
+  const btnCloseUserGuide = document.getElementById('btnCloseUserGuide');
+  const btnConfirmUserGuide = document.getElementById('btnConfirmUserGuide');
+
+  function openUserGuide() {
+    userGuideModal?.classList.remove('hidden');
+  }
+  function closeUserGuide() {
+    userGuideModal?.classList.add('hidden');
+  }
+
+  btnUserGuide?.addEventListener('click', openUserGuide);
+  btnCloseUserGuide?.addEventListener('click', closeUserGuide);
+  btnConfirmUserGuide?.addEventListener('click', closeUserGuide);
+
+  userGuideModal?.addEventListener('click', (e) => {
+    if (e.target === userGuideModal) closeUserGuide();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeUserGuide();
+      closeTechPassportModal();
+    }
+  });
+
   // Export PDF & Tech Card
   document.getElementById('btnExportPdf')?.addEventListener('click', exportImpositionPdf);
   document.getElementById('btnTechPassport')?.addEventListener('click', openTechPassportModal);
