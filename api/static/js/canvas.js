@@ -20,7 +20,7 @@ class RollCanvas {
     this.webOrientation = 'horizontal'; // 'horizontal' or 'vertical'
     this.showCutContour = true;
     this.showRulers = true;
-    this.showPrintDirection = true;
+    this.showPrintDirection = false;
     this.showColorStrip = true;
     this.showPrintableZone = true;
     this.showEyeMarks = true;
@@ -159,7 +159,7 @@ class RollCanvas {
 
     // Leave generous padding for rulers, top scale, lane labels, and direction arrow
     const extraMmX = 90;
-    const extraMmY = 65;
+    const extraMmY = 40;
     const availW = Math.max(100, rect.width - 50);
     const availH = Math.max(100, rect.height - 50);
 
@@ -283,9 +283,7 @@ class RollCanvas {
     }
 
     // 3.2 Draw Print Direction Arrow inside the sheet's bottom margin
-    if (this.showPrintDirection) {
-      this.drawPrintDirection(ctx, isHoriz, webLength, webWidth);
-    }
+    // Print direction arrow removed
 
     // 4. Draw Labels
     const positions = this.layout.positions;
@@ -440,9 +438,7 @@ class RollCanvas {
     }
 
     // 7. Draw External Print Direction Indicator Guide
-    if (this.showPrintDirection) {
-      this.drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth);
-    }
+    // External banner removed
 
     ctx.restore();
   }
@@ -630,189 +626,9 @@ class RollCanvas {
     }
   }
 
-  drawPrintDirection(ctx, isHoriz, webLength, webWidth) {
-    ctx.save();
-    ctx.strokeStyle = '#ef4444';
-    ctx.fillStyle = '#ef4444';
+  drawPrintDirection(ctx, isHoriz, webLength, webWidth) {}
 
-    if (isHoriz) {
-      // Inside sheet bottom margin (y = webWidth - 6.0 mm)
-      const arrowY = webWidth - 6.0;
-      const startX = 15;
-      const endX = webLength - 15;
-
-      // Arrow shaft line
-      ctx.lineWidth = 1.2 / this.scale;
-      ctx.beginPath();
-      ctx.moveTo(startX, arrowY);
-      ctx.lineTo(endX, arrowY);
-      ctx.stroke();
-
-      // Filled arrowhead at endX pointing right
-      const headL = 7.0;
-      const headW = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(endX, arrowY);
-      ctx.lineTo(endX - headL, arrowY - headW);
-      ctx.lineTo(endX - headL * 0.7, arrowY);
-      ctx.lineTo(endX - headL, arrowY + headW);
-      ctx.closePath();
-      ctx.fill();
-
-      // Chevrons along line
-      for (let cx = 150; cx < endX - 50; cx += 200) {
-        ctx.beginPath();
-        ctx.moveTo(cx - 3, arrowY - 2.5);
-        ctx.lineTo(cx + 1, arrowY);
-        ctx.lineTo(cx - 3, arrowY + 2.5);
-        ctx.stroke();
-      }
-
-    } else {
-      // Inside sheet right margin (x = webWidth - 6.0 mm)
-      // Print direction is FROM BOTTOM TO TOP (знизу вверх)
-      const arrowX = webWidth - 6.0;
-      const startY = webLength - 15; // starts at bottom (1000 mm)
-      const endY = 15;              // ends at top (0 mm)
-
-      ctx.lineWidth = 1.2 / this.scale;
-      ctx.beginPath();
-      ctx.moveTo(arrowX, startY);
-      ctx.lineTo(arrowX, endY);
-      ctx.stroke();
-
-      // Arrowhead pointing UP (at endY = 15)
-      const headL = 7.0;
-      const headW = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(arrowX, endY);
-      ctx.lineTo(arrowX - headW, endY + headL);
-      ctx.lineTo(arrowX, endY + headL * 0.7);
-      ctx.lineTo(arrowX + headW, endY + headL);
-      ctx.closePath();
-      ctx.fill();
-
-      // Chevrons pointing UP
-      for (let cy = webLength - 150; cy > endY + 50; cy -= 200) {
-        ctx.beginPath();
-        ctx.moveTo(arrowX - 2.5, cy + 3);
-        ctx.lineTo(arrowX, cy - 1);
-        ctx.lineTo(arrowX + 2.5, cy + 3);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
-  drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth) {
-    ctx.save();
-    if (isHoriz) {
-      // Position below the sheet at y = webWidth + 14 mm
-      const bannerY = webWidth + 14;
-      const bannerH = 11;
-      const startX = 0;
-      const endX = webLength;
-
-      // Dark background strip
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 0.8 / this.scale;
-
-      ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(startX, bannerY, endX - startX, bannerH, 3);
-      } else {
-        ctx.rect(startX, bannerY, endX - startX, bannerH);
-      }
-      ctx.fill();
-      ctx.stroke();
-
-      // Direction Guide Graphic inside banner
-      const midY = bannerY + bannerH / 2;
-      ctx.strokeStyle = '#ef4444';
-      ctx.fillStyle = '#ef4444';
-      ctx.lineWidth = 1.2 / this.scale;
-
-      // Line spanning banner
-      ctx.beginPath();
-      ctx.moveTo(startX + 10, midY);
-      ctx.lineTo(endX - 15, midY);
-      ctx.stroke();
-
-      // Arrowhead at end pointing right
-      const headL = 8.0;
-      const headW = 4.0;
-      ctx.beginPath();
-      ctx.moveTo(endX - 15, midY);
-      ctx.lineTo(endX - 15 - headL, midY - headW);
-      ctx.lineTo(endX - 15 - headL * 0.7, midY);
-      ctx.lineTo(endX - 15 - headL, midY + headW);
-      ctx.closePath();
-      ctx.fill();
-
-      // Repeating chevrons
-      for (let ch = startX + 60; ch < endX - 60; ch += 140) {
-        ctx.beginPath();
-        ctx.moveTo(ch - 4, midY - 3);
-        ctx.lineTo(ch + 2, midY);
-        ctx.lineTo(ch - 4, midY + 3);
-        ctx.stroke();
-      }
-
-    } else {
-      // Vertical banner to the right of sheet
-      // Print direction: FROM BOTTOM TO TOP (знизу вверх)
-      const bannerX = webWidth + 14;
-      const bannerW = 11;
-      const startY = 0;
-      const endY = webLength;
-
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 0.8 / this.scale;
-
-      ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(bannerX, startY, bannerW, endY - startY, 3);
-      } else {
-        ctx.rect(bannerX, startY, bannerW, endY - startY);
-      }
-      ctx.fill();
-      ctx.stroke();
-
-      const midX = bannerX + bannerW / 2;
-      ctx.strokeStyle = '#ef4444';
-      ctx.fillStyle = '#ef4444';
-      ctx.lineWidth = 1.2 / this.scale;
-
-      // Arrow line pointing UP: from bottom (endY - 15) to top (startY + 15)
-      ctx.beginPath();
-      ctx.moveTo(midX, endY - 15);
-      ctx.lineTo(midX, startY + 15);
-      ctx.stroke();
-
-      // Arrowhead at top (startY + 15) pointing UP
-      const headL = 8.0;
-      const headW = 4.0;
-      ctx.beginPath();
-      ctx.moveTo(midX, startY + 15);
-      ctx.lineTo(midX - headW, startY + 15 + headL);
-      ctx.lineTo(midX, startY + 15 + headL * 0.7);
-      ctx.lineTo(midX + headW, startY + 15 + headL);
-      ctx.closePath();
-      ctx.fill();
-
-      // Chevrons pointing UP
-      for (let cy = endY - 120; cy > startY + 80; cy -= 160) {
-        ctx.beginPath();
-        ctx.moveTo(midX - headW + 0.5, cy + 4);
-        ctx.lineTo(midX, cy - 2);
-        ctx.lineTo(midX + headW - 0.5, cy + 4);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
+  drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth) {}
 
   drawRulers(ctx, isHoriz, webLength, webWidth) {
     ctx.save();

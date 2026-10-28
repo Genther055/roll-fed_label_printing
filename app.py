@@ -208,7 +208,7 @@ class ExportPdfHandler(BaseHandler):
                 add_cut_lines=data.get("add_cut_lines", True),
                 add_info_banner=data.get("add_info_banner", True),
                 include_cmyk_scale=data.get("include_cmyk_scale", True),
-                add_print_direction=data.get("add_print_direction", True),
+                add_print_direction=False,
                 sheet_number=data.get("sheet_number", 5),
                 circulation=circulation,
                 waste=waste

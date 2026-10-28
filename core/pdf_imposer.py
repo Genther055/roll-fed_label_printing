@@ -59,7 +59,7 @@ def generate_imposition_pdf(
     add_cut_lines=True,
     add_info_banner=True,
     include_cmyk_scale=True,
-    add_print_direction=True,
+    add_print_direction=False,
     sheet_number=5,
     circulation=10000,
     waste="5"
@@ -233,49 +233,6 @@ def generate_imposition_pdf(
 
         if add_cut_lines:
             page1.draw_rect(target_rect, color=(1.0, 0.0, 1.0), width=0.4)
-
-    # 5. Print Direction Arrow along Bottom Margin
-    if add_print_direction:
-        arrow_y_pt = (roll_w_mm - 5.5) * MM_TO_PT
-        arrow_end_x_pt = (meter_l_mm - 20.0) * MM_TO_PT
-        arrow_start_x_pt = 20.0 * MM_TO_PT
-
-        page1.draw_line(
-            pymupdf.Point(arrow_start_x_pt, arrow_y_pt),
-            pymupdf.Point(arrow_end_x_pt, arrow_y_pt),
-            color=(0.85, 0.15, 0.15),
-            width=1.0
-        )
-        head_l_pt = 7.0 * MM_TO_PT
-        head_w_pt = 3.0 * MM_TO_PT
-        page1.draw_line(
-            pymupdf.Point(arrow_end_x_pt - head_l_pt, arrow_y_pt - head_w_pt),
-            pymupdf.Point(arrow_end_x_pt, arrow_y_pt),
-            color=(0.85, 0.15, 0.15),
-            width=1.2
-        )
-        page1.draw_line(
-            pymupdf.Point(arrow_end_x_pt - head_l_pt, arrow_y_pt + head_w_pt),
-            pymupdf.Point(arrow_end_x_pt, arrow_y_pt),
-            color=(0.85, 0.15, 0.15),
-            width=1.2
-        )
-
-        # Chevrons
-        for chx in (180, 360, 540, 720, 900):
-            ch_x_pt = chx * MM_TO_PT
-            page1.draw_line(
-                pymupdf.Point(ch_x_pt - 3 * MM_TO_PT, arrow_y_pt - 2.0 * MM_TO_PT),
-                pymupdf.Point(ch_x_pt, arrow_y_pt),
-                color=(0.85, 0.15, 0.15),
-                width=0.8
-            )
-            page1.draw_line(
-                pymupdf.Point(ch_x_pt - 3 * MM_TO_PT, arrow_y_pt + 2.0 * MM_TO_PT),
-                pymupdf.Point(ch_x_pt, arrow_y_pt),
-                color=(0.85, 0.15, 0.15),
-                width=0.8
-            )
 
     # 6. Millimeter Scale Ticks along bottom edge
     ruler_y_pt = (roll_w_mm - 1.0) * MM_TO_PT
