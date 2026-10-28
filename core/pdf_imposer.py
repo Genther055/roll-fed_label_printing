@@ -257,7 +257,7 @@ def generate_imposition_pdf(
     slug_y_pt = (roll_w_mm - 8.5) * MM_TO_PT
     page1.insert_text(
         pymupdf.Point(20.0 * MM_TO_PT, slug_y_pt),
-        f"ROLL-PRINT CAD  |  Файл: {original_filename}  |  Полотно 330 мм (друк: {active['layout_width']} мм)  |  Вихід: {active['total_per_meter']} шт/м  |  Техпаспорт див. на Стор. 2",
+        f"ROLL-PRINT CAD  |  Файл: {original_filename}  |  Полотно 330 мм (друк: {active.get('layout_width', 0)} мм)  |  Вихід: {active.get('total_per_meter', 0)} шт/м  |  Техпаспорт див. на Стор. 2",
         fontname=fname_reg,
         fontsize=5.2,
         color=(0.3, 0.35, 0.45)
@@ -321,17 +321,17 @@ def generate_imposition_pdf(
         # Right Column: Roll parameters (X = 110 mm)
         page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 33 * MM_TO_PT), "ПАРАМЕТРИ СПУСКУ НА РУЛОН", fontname=fname_bold, fontsize=9.5, color=(0.1, 0.4, 0.8))
         page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 40 * MM_TO_PT), f"Ширина матеріалу: {roll_w_mm} мм", fontname=fname_reg, fontsize=8.5, color=(0.15, 0.15, 0.15))
-        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 46 * MM_TO_PT), f"Ширина друку: {active['layout_width']} мм (ліміт: {printable_w_mm} мм)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
-        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 52 * MM_TO_PT), f"Бокові поля рулону: {active['side_margin']} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
-        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 58 * MM_TO_PT), f"Міжструмковий зазор (Y): {params.get('gap_y', 2.0)} мм  |  Крок (рапорт X): {active['step_x']} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
+        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 46 * MM_TO_PT), f"Ширина друку: {active.get('layout_width', 0)} мм (ліміт: {printable_w_mm} мм)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
+        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 52 * MM_TO_PT), f"Бокові поля рулону: {active.get('side_margin', 0)} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
+        page2.insert_text(pymupdf.Point(110 * MM_TO_PT, 58 * MM_TO_PT), f"Міжструмковий зазор (Y): {params.get('gap_y', 2.0)} мм  |  Крок (рапорт X): {active.get('step_x', 0)} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
 
         # Large KPI Card
         box_rect = pymupdf.Rect(15 * MM_TO_PT, 67 * MM_TO_PT, 195 * MM_TO_PT, 110 * MM_TO_PT)
         page2.draw_rect(box_rect, color=(0.85, 0.9, 0.96), fill=(0.95, 0.97, 1.0), width=0.8)
 
         page2.insert_text(pymupdf.Point(20 * MM_TO_PT, 76 * MM_TO_PT), "ГОЛОВНИЙ ВИРОБНИЧИЙ ПОКАЗНИК ВИХОДУ:", fontname=fname_bold, fontsize=8.5, color=(0.2, 0.35, 0.6))
-        page2.insert_text(pymupdf.Point(20 * MM_TO_PT, 91 * MM_TO_PT), f"{active['total_per_meter']} шт / пог. метр", fontname=fname_bold, fontsize=24, color=(0.08, 0.42, 0.85))
-        page2.insert_text(pymupdf.Point(20 * MM_TO_PT, 101 * MM_TO_PT), f"Розкладка: {active['lanes']} струмків × {active['repeats']} рядів на 1000 мм   |   Корисне заповнення: {active['efficiency_pct']}%", fontname=fname_reg, fontsize=8.5, color=(0.2, 0.25, 0.35))
+        page2.insert_text(pymupdf.Point(20 * MM_TO_PT, 91 * MM_TO_PT), f"{active.get('total_per_meter', 0)} шт / пог. метр", fontname=fname_bold, fontsize=24, color=(0.08, 0.42, 0.85))
+        page2.insert_text(pymupdf.Point(20 * MM_TO_PT, 101 * MM_TO_PT), f"Розкладка: {active.get('lanes', 0)} струмків × {active.get('repeats', 0)} рядів на 1000 мм   |   Корисне заповнення: {active.get('efficiency_pct', 0)}%", fontname=fname_reg, fontsize=8.5, color=(0.2, 0.25, 0.35))
 
         # Miniature artwork preview inside KPI Box
         thumb_rect = pymupdf.Rect(155 * MM_TO_PT, 71 * MM_TO_PT, 185 * MM_TO_PT, 106 * MM_TO_PT)
