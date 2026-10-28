@@ -14,7 +14,20 @@ from core.pdf_inspector import inspect_file
 from core.layout_engine import calculate_layout, FINAT_SCHEMES
 from core.pdf_imposer import generate_imposition_pdf
 
-app = Flask(__name__)
+def get_static_folder():
+    for candidate in [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static"),
+        os.path.join(os.getcwd(), "static"),
+        os.path.join(os.getcwd(), "public", "static"),
+        "/var/task/api/static",
+        "/var/task/static",
+    ]:
+        if os.path.exists(candidate) and os.path.isdir(candidate):
+            return candidate
+    return os.path.join(BASE_DIR, "static")
+
+app = Flask(__name__, static_folder=get_static_folder(), static_url_path="/static")
 
 class VercelPathMiddleware:
     def __init__(self, wsgi_app):
@@ -34,7 +47,19 @@ class VercelPathMiddleware:
 
 app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
 
-SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
+def find_dir(name):
+    for root in [
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.abspath(__file__)),
+        os.getcwd(),
+        "/var/task"
+    ]:
+        p = os.path.join(root, name)
+        if os.path.exists(p) and os.path.isdir(p):
+            return p
+    return os.path.join(BASE_DIR, name)
+
+SAMPLES_DIR = find_dir("samples")
 
 # Vercel serverless has a read-only filesystem except /tmp
 if os.environ.get("VERCEL") or not os.access(os.path.join(BASE_DIR, "uploads"), os.W_OK):
@@ -56,30 +81,15 @@ def add_cors_headers(response):
 @app.route("/index.html", methods=["GET"])
 def index():
     for candidate in [
+        os.path.join(BASE_DIR, "public", "index.html"),
         os.path.join(BASE_DIR, "index.html"),
         os.path.join(BASE_DIR, "static", "index.html"),
+        os.path.join(os.getcwd(), "public", "index.html"),
+        os.path.join(os.getcwd(), "index.html"),
     ]:
-        if os.path.exists(candidate):
+        if os.path.exists(candidate) and os.path.isfile(candidate):
             return send_file(candidate, mimetype="text/html")
     return "ROLL-PRINT CAD is running."
-
-@app.route("/static/<path:filename>", methods=["GET"])
-def static_files(filename):
-    fpath = os.path.join(BASE_DIR, "static", filename)
-    if os.path.exists(fpath):
-        return send_file(fpath)
-    return jsonify({"error": "Static file not found"}), 404
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({
-        "error": "Not Found",
-        "path": request.path,
-        "full_path": request.full_path,
-        "url": request.url,
-        "environ_path_info": request.environ.get("PATH_INFO"),
-        "environ_request_uri": request.environ.get("REQUEST_URI"),
-    }), 404
 
 @app.route("/api/samples", methods=["GET"])
 @app.route("/samples", methods=["GET"])
@@ -270,3 +280,14 @@ def api_download(filename):
     response = send_file(fpath, mimetype="application/pdf", as_attachment=True, download_name=clean_name)
     response.headers["Content-Disposition"] = disposition
     return response
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({
+        "error": "Not Found",
+        "path": request.path,
+        "full_path": request.full_path,
+        "url": request.url,
+        "environ_path_info": request.environ.get("PATH_INFO"),
+        "environ_request_uri": request.environ.get("REQUEST_URI"),
+    }), 404

@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
   "functions": {
     "api/*.py": {
-      "includeFiles": "{samples/**,core/**,static/**,index.html}"
+      "includeFiles": "{samples/**,core/**,static/**,public/**,api/static/**,index.html}"
     }
   },
   "rewrites": [
