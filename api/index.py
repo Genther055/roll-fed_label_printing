@@ -53,6 +53,7 @@ def static_files(filename):
     return jsonify({"error": "Static file not found"}), 404
 
 @app.route("/api/samples", methods=["GET"])
+@app.route("/samples", methods=["GET"])
 def api_samples():
     samples = []
     if os.path.exists(SAMPLES_DIR):
@@ -79,6 +80,7 @@ def api_samples():
     return jsonify({"samples": samples})
 
 @app.route("/api/upload", methods=["POST"])
+@app.route("/upload", methods=["POST"])
 def api_upload():
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -107,6 +109,7 @@ def api_upload():
         return jsonify({"error": f"Failed to inspect file: {str(e)}"}), 500
 
 @app.route("/api/inspect", methods=["POST"])
+@app.route("/inspect", methods=["POST"])
 def api_inspect():
     data = request.get_json(force=True, silent=True) or {}
     filename = data.get("filename")
@@ -127,6 +130,7 @@ def api_inspect():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/calculate", methods=["POST"])
+@app.route("/calculate", methods=["POST"])
 def api_calculate():
     data = request.get_json(force=True, silent=True) or {}
 
@@ -162,6 +166,7 @@ def api_calculate():
     })
 
 @app.route("/api/export_pdf", methods=["POST"])
+@app.route("/export_pdf", methods=["POST"])
 def api_export_pdf():
     data = request.get_json(force=True, silent=True) or {}
     filename = data.get("filename")
@@ -222,6 +227,7 @@ def api_export_pdf():
         return jsonify({"error": f"PDF Export failed: {str(e)}"}), 500
 
 @app.route("/download/<path:filename>", methods=["GET"])
+@app.route("/api/download/<path:filename>", methods=["GET"])
 def api_download(filename):
     fpath = os.path.join(UPLOADS_DIR, filename)
     if not os.path.exists(fpath):
@@ -235,6 +241,3 @@ def api_download(filename):
     response = send_file(fpath, mimetype="application/pdf", as_attachment=True, download_name=clean_name)
     response.headers["Content-Disposition"] = disposition
     return response
-
-if __name__ == "__main__":
-    app.run(port=8088, debug=True)
