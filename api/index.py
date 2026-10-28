@@ -52,6 +52,17 @@ def static_files(filename):
         return send_file(fpath)
     return jsonify({"error": "Static file not found"}), 404
 
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({
+        "error": "Not Found",
+        "path": request.path,
+        "full_path": request.full_path,
+        "url": request.url,
+        "environ_path_info": request.environ.get("PATH_INFO"),
+        "environ_request_uri": request.environ.get("REQUEST_URI"),
+    }), 404
+
 @app.route("/api/samples", methods=["GET"])
 @app.route("/samples", methods=["GET"])
 def api_samples():
