@@ -289,13 +289,6 @@ def generate_imposition_pdf(
             color=(0.08, 0.12, 0.2)
         )
         page2.insert_text(
-            pymupdf.Point(15 * MM_TO_PT, 22 * MM_TO_PT),
-            "Спуск на рулонне полотно 330 мм (довжина 1000 мм)",
-            fontname=fname_reg,
-            fontsize=8.5,
-            color=(0.4, 0.45, 0.55)
-        )
-        page2.insert_text(
             pymupdf.Point(155 * MM_TO_PT, 16 * MM_TO_PT),
             f"Дата: {now_str}",
             fontname=fname_reg,
@@ -397,7 +390,6 @@ def generate_imposition_pdf(
 
         # Footer notes
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 131 * MM_TO_PT), "ROLL-PRINT CAD  •  Спуск рулонної етикетки на 1 погонний метр", fontname=fname_reg, fontsize=7, color=(0.55, 0.6, 0.68))
-        page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 136 * MM_TO_PT), "Документ містить точні параметри для налаштування друкарської машини та виготовлення висічного ножа.", fontname=fname_reg, fontsize=6.5, color=(0.6, 0.65, 0.72))
 
     if output_pdf_path:
         doc.save(output_pdf_path, deflate=True, garbage=4, clean=True)
