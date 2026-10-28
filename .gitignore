@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# User uploads & generated output files
+uploads/*
+!uploads/.gitkeep
+temp_previews/*
+!temp_previews/.gitkeep
+
+# Local scratch & test files
+scratch/
+test_*.py
+test_*.pdf
+test_*.png
+
+# Operating System & IDE artifacts
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node.js
+node_modules/
