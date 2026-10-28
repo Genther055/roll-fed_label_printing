@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="uk" class="dark h-full w-full overflow-hidden">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ROLL-PRINT CAD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/css/custom.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            blender: {
+              bg: '#181818',
+              header: '#232323',
+              subbar: '#262626',
+              panel: '#282828',
+              card: '#2b2b2b',
+              input: '#181818',
+              btn: '#3a3a3a',
+              btnHover: '#474747',
+              blue: '#4772b3',
+              blueHover: '#5684c9',
+              border: '#1c1c1c',
+              borderLight: '#333333',
+              text: '#dedede',
+              textMuted: '#969696'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#181818] text-[#dedede] h-full w-full flex flex-col overflow-hidden antialiased select-none font-sans">
+
+  <!-- Header -->
+  <header class="h-8 px-3 border-b border-[#1c1c1c] bg-[#232323] flex items-center justify-between shrink-0 z-30">
+    
+    <!-- Brand -->
+    <div class="flex items-center gap-2">
+      <span class="font-bold text-xs tracking-wider text-[#dedede] uppercase font-mono">ROLL-PRINT</span>
+      <span class="px-1.5 py-0.2 rounded-[3px] text-[9.5px] font-mono font-semibold bg-[#333333] text-[#dedede] border border-[#444444]">CAD</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-1.5">
+      <button id="btnTechPassport" class="cad-btn h-6 px-2.5 py-0.5 text-[11px] active:scale-95 transition">
+        Паспорт
+      </button>
+      <button id="btnExportPdf" class="cad-btn-primary h-6 px-2.5 py-0.5 text-[11px] active:scale-95 transition">
+        Експорт PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Sub-Toolbar -->
+  <div class="h-8 px-3 border-b border-[#1c1c1c] bg-[#262626] flex items-center justify-between shrink-0 z-30 gap-2 relative">
+    
+    <!-- Mode Controls -->
+    <div class="flex items-center gap-1.5 shrink-0">
+      
+      <!-- Orientation Switcher -->
+      <div class="cad-segment-tray">
+        <button id="toggleWebHoriz" class="cad-segment-btn active flex items-center gap-1 whitespace-nowrap active:scale-95">
+          <span>↔</span> Горизонтально
+        </button>
+        <button id="toggleWebVert" class="cad-segment-btn flex items-center gap-1 whitespace-nowrap active:scale-95">
+          <span>↕</span> Вертикально
+        </button>
+      </div>
+
+      <!-- Layers Dropdown -->
+      <div class="relative shrink-0" id="layersDropdownContainer">
+        <button id="btnLayersDropdown" type="button" class="cad-btn h-5.5 px-2 text-[10.5px] flex items-center gap-1 active:scale-95 whitespace-nowrap">
+          <span>Шари</span>
+          <span id="layersCountBadge" class="px-1 rounded-full text-[9px] font-bold bg-[#283149] text-white border border-[#3e4968]">6</span>
+          <svg id="dropdownArrow" class="w-2.5 h-2.5 text-[#969696] transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- Layers Menu -->
+        <div id="layersDropdownMenu" class="hidden absolute left-0 top-full mt-1.5 w-60 bg-[#242424] border border-[#383838] rounded-[4px] shadow-2xl p-2 z-50">
+          <div class="text-[9.5px] font-semibold text-[#969696] uppercase tracking-wider px-2 py-1 mb-1 border-b border-[#2e2e2e] flex items-center justify-between">
+            <span>Шари розкладки</span>
+          </div>
+
+          <div class="space-y-0.5">
+            <!-- 1. Cut Contour -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Лінія висічки</span>
+              </div>
+              <input type="checkbox" id="chkCutContour" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-pink-500 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- 1.1. Bleeds (Вильоти під обріз) -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Вильоти під обріз (Bleed)</span>
+              </div>
+              <input type="checkbox" id="chkBleed" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-cyan-500 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- 2. Printable Zone 305mm -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Зона друку 305 мм</span>
+              </div>
+              <input type="checkbox" id="chkPrintableZone" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-sky-500 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- 3. Eye Marks -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-sm bg-white"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Фотометки</span>
+              </div>
+              <input type="checkbox" id="chkEyeMarks" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-blue-500 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- 4. Print Direction -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Напрямок друку</span>
+              </div>
+              <input type="checkbox" id="chkPrintDirection" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-red-500 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- 5. CMYK Color Scale -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Шкала CMYK</span>
+              </div>
+              <input type="checkbox" id="chkRulers" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-amber-500 focus:ring-0 cursor-pointer">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Telemetry Metrics -->
+    <div class="hidden xl:flex items-center gap-2 font-mono text-[11px] text-[#dedede]">
+      <span class="font-semibold text-white">Полотно: 330 мм</span>
+      <span class="text-[#3a3a3a]">│</span>
+      <span>Друк: <b id="telemetryLayoutW" class="text-white font-bold">292 мм</b> <span class="text-[9px] text-[#969696]">(≤305)</span></span>
+      <span class="text-[#3a3a3a]">│</span>
+      <span>Вихід: <b id="telemetryYield" class="text-[#5684c9] font-bold">266 шт/м</b></span>
+      <span class="text-[#3a3a3a]">│</span>
+      <span id="telemetryLanesRepeats" class="text-[#a0a0a0]">7 струмків × 38 рядів</span>
+      <span class="text-[#3a3a3a]">│</span>
+      <span>Корисна площа: <b id="telemetryEfficiency" class="text-[#73c991] font-bold">77.38%</b></span>
+    </div>
+
+    <!-- Navigation & Direction Indicator -->
+    <div class="flex items-center gap-1 shrink-0">
+      
+      <!-- Direction Pill -->
+      <div id="printDirectionPill" class="h-5.5 px-2 rounded-[3px] text-[10px] font-mono font-semibold bg-[#222222] text-red-400 border border-red-500/25 whitespace-nowrap flex items-center gap-1">
+        <span>►</span> 1000 мм (хід)
+      </div>
+
+      <div class="w-px h-3.5 bg-[#333333] mx-0.5"></div>
+
+      <!-- Viewport Zoom Controls -->
+      <div class="cad-segment-tray">
+        <button id="btnZoomOut" title="Зменшити (-)" class="cad-segment-btn w-5 h-5 flex items-center justify-center font-mono text-xs active:scale-95">−</button>
+        <div class="w-px h-3 bg-[#2c2c2c]"></div>
+        <button id="btnZoomIn" title="Збільшити (+)" class="cad-segment-btn w-5 h-5 flex items-center justify-center font-mono text-xs active:scale-95">+</button>
+      </div>
+
+      <button id="btnFitMeter" title="Вмістити 1000 мм" class="cad-btn h-5.5 px-2 text-[10.5px] active:scale-95 whitespace-nowrap">
+        ⤢ 1000 мм
+      </button>
+
+      <button id="btnResetView" title="По центру" class="cad-btn h-5.5 px-2 text-[10.5px] active:scale-95 whitespace-nowrap">
+        Центр
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- Workspace: Sidebar & Canvas -->
+  <div class="flex-1 min-h-0 w-full flex overflow-hidden bg-[#181818]">
+    
+    <!-- Left Sidebar: Controls & Inspector -->
+    <aside class="w-[350px] border-r border-[#1c1c1c] bg-[#282828] overflow-y-auto p-3 flex flex-col gap-2.5 shrink-0 h-full">
+      
+      <!-- Section 1: Label File Selection & Dropzone -->
+      <div class="studio-card rounded-[4px] p-2.5">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-[3px] bg-[#383838] text-[#dedede] font-mono text-[10px] flex items-center justify-center font-bold">1</span>
+            <span>Макет або розміри</span>
+          </div>
+          <span class="text-[10px] text-[#969696] font-mono">PDF / Контур</span>
+        </div>
+
+        <!-- Button: Dimension-Only Layout (No artwork file needed) -->
+        <button id="btnDimensionOnly" type="button" class="cad-btn w-full mb-1.5 py-1 px-2 text-[#dedede] hover:text-white border-[#383838] text-[11px] font-medium active:scale-98 shadow-sm">
+          <span>Розкладка за розмірами (без макету)</span>
+        </button>
+
+        <div class="flex items-center gap-2 mb-2 text-[#555555]">
+          <div class="h-px bg-[#202020] flex-1"></div>
+          <span class="text-[9.5px] uppercase font-mono tracking-wider">або файл макету</span>
+          <div class="h-px bg-[#202020] flex-1"></div>
+        </div>
+
+        <!-- Dropzone File Upload -->
+        <label for="fileInput" id="dropzone" class="block border border-dashed border-[#383838] hover:border-[#4772b3] rounded-[4px] p-2 text-center cursor-pointer transition bg-[#202020] hover:bg-[#252525] mb-2 select-none group">
+          <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp" class="sr-only">
+          <div id="dropzoneContent">
+            <div class="text-[#4772b3] mb-1 flex justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            </div>
+            <div class="text-[11px] font-semibold text-white group-hover:text-[#5684c9] transition-colors">Завантажити етикетку</div>
+            <div class="text-[9.5px] text-[#969696]">PDF / PNG</div>
+          </div>
+          <div id="dropzoneLoading" class="hidden py-1">
+            <div class="inline-block animate-spin w-4 h-4 border-2 border-[#4772b3] border-t-transparent rounded-full mb-1"></div>
+            <div class="text-[11px] font-bold text-[#4772b3]">Обробка файлу...</div>
+          </div>
+        </label>
+
+        <!-- Selected File Info -->
+        <div id="currentFileInfoPanel" class="hidden mb-2 p-2 rounded-[4px] bg-[#202020] border border-[#2b2b2b] flex items-center gap-2.5">
+          <div class="w-10 h-12 rounded-[3px] bg-[#181818] border border-[#333333] overflow-hidden flex items-center justify-center shrink-0">
+            <img id="currentFilePreview" class="w-full h-full object-contain" />
+          </div>
+          <div class="overflow-hidden flex-1 min-w-0">
+            <div id="currentFileName" class="text-xs font-bold text-[#5684c9] truncate font-mono">label.pdf</div>
+            <div id="currentFileDims" class="text-[11px] text-[#dedede] font-mono mt-0.5">24.0 × 40.0 мм</div>
+          </div>
+        </div>
+
+        <!-- Samples -->
+        <div>
+          <div class="text-[10px] font-semibold text-[#969696] mb-1">Зразки етикеток:</div>
+          <div id="samplesList" class="grid grid-cols-2 gap-1 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- Section 2: Application Method & Optimization -->
+      <div class="studio-card rounded-[4px] p-2.5">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-[3px] bg-[#383838] text-[#dedede] font-mono text-[10px] flex items-center justify-center font-bold">2</span>
+            <span>Тип нанесення</span>
+          </div>
+          <span class="text-[10px] text-[#969696]">Орієнтація</span>
+        </div>
+
+        <!-- Segmented Mode Control -->
+        <div class="grid grid-cols-2 gap-1 p-0.5 bg-[#181818] rounded-[4px] border border-[#282828] mb-2">
+          <label class="cursor-pointer">
+            <input type="radio" name="appType" value="manual" checked class="peer hidden">
+            <div class="cad-radio-pill">
+              Ручне
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="appType" value="auto" class="peer hidden">
+            <div class="cad-radio-pill">
+              Аплікатор
+            </div>
+          </label>
+        </div>
+
+        <!-- Manual Application: Best Yield Comparison -->
+        <div id="manualOrientationSection" class="space-y-1.5">
+          <div class="p-2 rounded-[4px] bg-[#202020] border border-[#2b2b2b]">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-semibold text-[#969696]">Вихід на 1000 мм:</span>
+              <span id="recommendationBadge" class="px-1.5 py-0.2 rounded-[3px] text-[9.5px] font-semibold bg-[#2a3749] text-[#5684c9] border border-[#3b5982]">
+                Альбомна
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1 text-center mb-1">
+              <label class="cursor-pointer">
+                <input type="radio" name="orientationMode" value="portrait" class="peer hidden">
+                <div class="cad-opt-card p-1">
+                  <div class="text-[9px] text-[#969696]">Книжкова (0°)</div>
+                  <div id="portraitYield" class="text-xs font-bold text-white font-mono">253 шт/м</div>
+                  <div id="portraitDetails" class="text-[9px] text-[#969696]">11 стр. × 23 ряд.</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="orientationMode" value="landscape" class="peer hidden">
+                <div class="cad-opt-card p-1">
+                  <div class="text-[9px] text-[#969696]">Альбомна (90°)</div>
+                  <div id="landscapeYield" class="text-xs font-bold text-[#73c991] font-mono">266 шт/м</div>
+                  <div id="landscapeDetails" class="text-[9px] text-[#969696]">7 стр. × 38 ряд.</div>
+                </div>
+              </label>
+            </div>
+
+            <label class="flex items-center gap-1.5 p-1 rounded-[3px] bg-[#181818] hover:bg-[#232323] border border-[#2e2e2e] cursor-pointer transition text-[10px]">
+              <input type="radio" name="orientationMode" value="auto_max" checked class="accent-[#4772b3] focus:ring-0">
+              <span class="font-medium text-white">Автоматичний вибір</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Automatic Application: FINAT Schemes 1-8 -->
+        <div id="autoSchemesSection" class="hidden space-y-1">
+          <input type="hidden" id="windingSchemeInput" value="1">
+          <div class="text-[10px] text-[#dedede] font-medium flex items-center justify-between">
+            <span>Схема намотки (FINAT 1–8):</span>
+          </div>
+          <div id="schemesGrid" class="grid grid-cols-4 gap-1 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- Section 3: Technical Parameters -->
+      <div class="studio-card rounded-[4px] p-2.5">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-[3px] bg-[#383838] text-[#dedede] font-mono text-[10px] flex items-center justify-center font-bold">3</span>
+            <span>Параметри спуску (мм)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="block text-[10px] text-[#969696] mb-0.5">Ширина висічки (W):</label>
+            <input type="number" id="labelWidthInput" step="0.5" value="24" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#969696] mb-0.5">Висота висічки (H):</label>
+            <input type="number" id="labelHeightInput" step="0.5" value="40" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#5684c9] font-medium mb-0.5">Вильоти (бліди):</label>
+            <div class="relative">
+              <input type="number" id="bleedInput" step="0.5" value="2" min="0" max="10" class="studio-input w-full px-2 py-1 text-xs font-bold text-white border-[#383838] focus:border-[#4772b3]">
+              <span class="absolute right-2 top-1 text-[10px] text-[#969696] pointer-events-none">мм</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#969696] mb-0.5">Полотно рулону:</label>
+            <input type="number" id="rollWidthInput" step="1" value="330" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#969696] mb-0.5">Пропуск вбік (X):</label>
+            <input type="number" id="gapXInput" step="0.5" value="2" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] text-[#969696] mb-0.5">Пропуск по висоті (Y):</label>
+            <input type="number" id="gapYInput" step="0.5" value="2" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-[10px] text-[#969696] mb-0.5">Макс. ширина друку (ліміт):</label>
+            <input type="number" id="printableWidthInput" step="1" value="305" class="studio-input w-full px-2 py-1 text-xs">
+          </div>
+        </div>
+        <input type="hidden" id="meterLengthInput" value="1000">
+      </div>
+
+    </aside>
+
+    <!-- Canvas Viewport -->
+    <main class="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-[#181818] relative">
+      
+      <!-- Canvas Container -->
+      <div id="canvasContainer" class="flex-1 min-h-0 w-full relative overflow-hidden">
+        <canvas id="rollCanvas"></canvas>
+
+        <!-- Viewport Tools -->
+        <div class="absolute left-2.5 top-2.5 z-20 flex flex-col gap-1 bg-[#242424]/95 border border-[#333333] p-1 rounded-[4px] shadow-2xl">
+          <!-- Selection Tool -->
+          <button class="w-6.5 h-6.5 rounded-[3px] bg-[#4772b3] text-white flex items-center justify-center text-xs shadow-sm font-bold active:scale-95 transition" title="Інструмент вибору">
+            ↖
+          </button>
+          
+          <!-- Axis Indicator -->
+          <div class="text-[8.5px] font-mono text-center text-[#969696] py-0.5 border-t border-b border-[#303030] select-none leading-tight">
+            Z<br><span class="text-[#dedede] font-bold">+85</span>
+          </div>
+
+          <button onclick="rollCanvas.zoomIn()" class="w-6.5 h-6.5 rounded-[3px] bg-[#333333] hover:bg-[#404040] text-[#dedede] hover:text-white flex items-center justify-center font-mono text-xs active:scale-95 transition" title="Збільшити">+</button>
+          <button onclick="rollCanvas.zoomOut()" class="w-6.5 h-6.5 rounded-[3px] bg-[#333333] hover:bg-[#404040] text-[#dedede] hover:text-white flex items-center justify-center font-mono text-xs active:scale-95 transition" title="Зменшити">−</button>
+          <button onclick="rollCanvas.fitMeter()" class="w-6.5 h-6.5 rounded-[3px] bg-[#333333] hover:bg-[#404040] text-[#dedede] hover:text-white flex items-center justify-center text-xs active:scale-95 transition" title="Вмістити 1000 мм">⤢</button>
+        </div>
+
+        <!-- Hover HUD Tooltip -->
+        <div id="canvasHud" class="hover-hud opacity-0 absolute top-3 right-3 p-2 rounded-[4px] bg-[#1c1c1c]/95 border border-[#333333] shadow-xl pointer-events-none text-xs font-mono backdrop-blur z-20"></div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="h-10 border-t border-[#1c1c1c] bg-[#232323] px-3 flex items-center justify-between shrink-0 z-20 text-xs font-mono gap-2 overflow-hidden select-none">
+        
+        <!-- Primary Metric -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[9px] text-[#969696] uppercase font-bold tracking-wider font-sans">Вихід:</span>
+          <span id="kpiYield" class="text-sm font-black text-[#5684c9] font-mono tracking-tight whitespace-nowrap">266 шт/м</span>
+        </div>
+
+        <div class="h-4 w-px bg-[#303030] shrink-0"></div>
+
+        <!-- Circulation Calculator -->
+        <div id="circulationCalculator" class="flex items-center gap-2 bg-[#1c1c1c] px-2.5 py-0.5 rounded-[4px] border border-[#2e2e2e] shrink-0 shadow-inner">
+          
+          <!-- Box 1: Circulation Input -->
+          <div class="flex items-center gap-1">
+            <span class="text-[9px] uppercase font-bold text-[#969696] tracking-wider font-sans">Тираж:</span>
+            <div class="flex items-center">
+              <input type="number" id="calcCirculationInput" value="10000" step="500" min="1" 
+                     class="w-[66px] bg-[#141414] border border-[#333333] hover:border-[#4772b3]/50 focus:border-[#4772b3] text-white font-mono font-bold text-[11px] rounded-[3px] px-1.5 py-0.5 text-right outline-none transition"
+                     title="Введіть необхідну кількість етикеток">
+              <span class="ml-1 text-[9px] text-[#969696]">шт</span>
+            </div>
+          </div>
+
+          <div class="h-3.5 w-px bg-[#2a2a2a]"></div>
+
+          <!-- Box 2: Calculated Web Meters (Чистий метраж) -->
+          <div class="flex items-center gap-1" title="Орієнтовна чиста довжина рулону без відходів">
+            <span class="text-[9px] uppercase font-bold text-[#969696] tracking-wider font-sans">Полотно:</span>
+            <span id="calcMetersNet" class="text-xs font-black text-[#e5c07b] font-mono whitespace-nowrap">~37.2 м</span>
+            <span id="calcRowsCount" class="text-[9px] text-[#969696] font-mono whitespace-nowrap">(1 429 ряд.)</span>
+          </div>
+
+          <div class="h-3.5 w-px bg-[#2a2a2a]"></div>
+
+          <!-- Box 3: With Waste / Setup Allowance (З приладкою) -->
+          <div class="flex items-center gap-1">
+            <span class="text-[9px] uppercase font-bold text-[#969696] tracking-wider font-sans">+Запас:</span>
+            <select id="calcWastePercent" class="bg-[#141414] border border-[#333333] text-[10px] text-[#5684c9] font-bold rounded-[3px] px-1 py-0.5 outline-none cursor-pointer hover:border-[#4772b3]" title="Технічний відхід на приладку">
+              <option value="0">0%</option>
+              <option value="3">+3%</option>
+              <option value="5" selected>+5%</option>
+              <option value="10">+10%</option>
+              <option value="50m">+50м</option>
+            </select>
+            <span id="calcMetersGross" class="text-xs font-black text-[#73c991] font-mono whitespace-nowrap" title="Метраж з урахуванням технічного запасу">~39.1 м</span>
+            <span id="calcSquareMeters" class="text-[9px] text-[#969696] font-mono hidden 2xl:inline whitespace-nowrap">(12.9 м²)</span>
+          </div>
+
+        </div>
+
+        <div class="h-4 w-px bg-[#303030] shrink-0"></div>
+
+        <!-- Production Metrics -->
+        <div class="flex items-center gap-2 text-[#dedede] shrink-0 text-[11px] font-mono">
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Струмки:</span>
+            <span id="kpiLanes" class="font-bold text-white">7</span>
+          </div>
+          <span class="text-[#444444]">×</span>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Ряди:</span>
+            <span id="kpiRepeats" class="font-bold text-white">38</span>
+          </div>
+          <div class="h-3.5 w-px bg-[#303030]"></div>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Друк:</span>
+            <span id="kpiLayoutW" class="font-bold text-white">292 мм</span>
+          </div>
+          <div class="h-3.5 w-px bg-[#303030]"></div>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Поля:</span>
+            <span id="kpiMargins" class="font-bold text-white">19 мм</span>
+          </div>
+          <div class="h-3.5 w-px bg-[#303030]"></div>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Рапорт:</span>
+            <span id="kpiStep" class="font-bold text-white">26 мм</span>
+          </div>
+          <div class="h-3.5 w-px bg-[#303030]"></div>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span class="text-[8.5px] text-[#969696] uppercase font-bold">Площа:</span>
+            <span id="kpiEfficiency" class="font-bold text-[#73c991]">77.38%</span>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Technical Passport Modal -->
+  <div id="techPassportModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#242424] border border-[#383838] rounded-[4px] max-w-xl w-full p-5 shadow-2xl overflow-y-auto max-h-[90vh]" id="techPassportContent">
+    </div>
+  </div>
+
+  <script src="/static/js/schemes.js"></script>
+  <script src="/static/js/canvas.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

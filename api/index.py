@@ -3,7 +3,7 @@ import sys
 import uuid
 import re
 import urllib.parse
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file
 
 # Ensure project root is in sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,12 +35,22 @@ def add_cors_headers(response):
     return response
 
 @app.route("/", methods=["GET"])
+@app.route("/index.html", methods=["GET"])
 def index():
-    return send_from_directory(os.path.join(BASE_DIR, "static"), "index.html")
+    for candidate in [
+        os.path.join(BASE_DIR, "index.html"),
+        os.path.join(BASE_DIR, "static", "index.html"),
+    ]:
+        if os.path.exists(candidate):
+            return send_file(candidate, mimetype="text/html")
+    return "ROLL-PRINT CAD is running."
 
 @app.route("/static/<path:filename>", methods=["GET"])
 def static_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, "static"), filename)
+    fpath = os.path.join(BASE_DIR, "static", filename)
+    if os.path.exists(fpath):
+        return send_file(fpath)
+    return jsonify({"error": "Static file not found"}), 404
 
 @app.route("/api/samples", methods=["GET"])
 def api_samples():
