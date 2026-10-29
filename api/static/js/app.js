@@ -218,6 +218,9 @@ function updateKPIs(layout) {
   if (tLanesRepeats) tLanesRepeats.innerText = `${active.lanes} струмків × ${active.repeats} рядів`;
   if (tEfficiency) tEfficiency.innerText = `${active.efficiency_pct}%`;
 
+  const mPill = document.getElementById('mobileYieldPill');
+  if (mPill) mPill.innerText = `${active.total_per_meter} шт/м`;
+
   updateCirculationCalculator();
 }
 
@@ -455,6 +458,42 @@ function initUIEvents() {
     updateLayersCountBadge();
   });
 
+  // Mobile Segmented Tab Switcher (Parameters vs Canvas)
+  const mobileTabParams = document.getElementById('mobileTabParams');
+  const mobileTabCanvas = document.getElementById('mobileTabCanvas');
+  const sidebarPanel = document.getElementById('sidebarPanel');
+  const canvasPanel = document.getElementById('canvasPanel');
+
+  function setMobileTab(activeTab) {
+    if (activeTab === 'canvas') {
+      sidebarPanel?.classList.add('hidden');
+      canvasPanel?.classList.remove('hidden');
+      canvasPanel?.classList.add('flex');
+      mobileTabCanvas?.classList.replace('text-[#969696]', 'text-white');
+      mobileTabCanvas?.classList.add('bg-[#3a3a3a]', 'shadow-sm');
+      mobileTabParams?.classList.remove('bg-[#3a3a3a]', 'shadow-sm');
+      mobileTabParams?.classList.replace('text-white', 'text-[#969696]');
+      // Trigger canvas resize and fit
+      setTimeout(() => {
+        if (rollCanvas) {
+          rollCanvas.resize();
+          rollCanvas.fitMeter();
+        }
+      }, 50);
+    } else {
+      canvasPanel?.classList.add('hidden');
+      canvasPanel?.classList.remove('flex');
+      sidebarPanel?.classList.remove('hidden');
+      mobileTabParams?.classList.replace('text-[#969696]', 'text-white');
+      mobileTabParams?.classList.add('bg-[#3a3a3a]', 'shadow-sm');
+      mobileTabCanvas?.classList.remove('bg-[#3a3a3a]', 'shadow-sm');
+      mobileTabCanvas?.classList.replace('text-white', 'text-[#969696]');
+    }
+  }
+
+  mobileTabParams?.addEventListener('click', () => setMobileTab('params'));
+  mobileTabCanvas?.addEventListener('click', () => setMobileTab('canvas'));
+
   // User Guide Modal
   const userGuideModal = document.getElementById('userGuideModal');
   const btnUserGuide = document.getElementById('btnUserGuide');
@@ -532,8 +571,12 @@ async function exportImpositionPdf() {
   btn.innerHTML = `<span class="inline-block w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span> Генерація...`;
   btn.disabled = true;
 
-  const cleanOriginalName = currentFile.original_filename || document.getElementById('currentFileName')?.innerText || '';
-  const circVal = parseInt(document.getElementById('calcCirculationInput')?.value) || 10000;
+  const cleanOriginalName = (currentFile && currentFile.original_filename)
+    ? currentFile.original_filename.replace(/\.[^/.]+$/, "")
+    : `спуск_висічки_${currentLayout.params.label_width}x${currentLayout.params.label_height}мм`;
+
+  const circInput = document.getElementById('calcCirculationInput') || document.getElementById('calcCirculation');
+  const circVal = parseInt(circInput?.value) || 10000;
   const wasteVal = document.getElementById('calcWastePercent')?.value || '5';
 
   try {
@@ -547,10 +590,10 @@ async function exportImpositionPdf() {
         layout: currentLayout,
         circulation: circVal,
         waste: wasteVal,
-        add_eye_marks: rollCanvas.showEyeMarks,
-        add_cut_lines: rollCanvas.showCutContour,
+        add_eye_marks: rollCanvas ? rollCanvas.showEyeMarks : true,
+        add_cut_lines: rollCanvas ? rollCanvas.showCutContour : true,
         add_info_banner: true,
-        include_cmyk_scale: rollCanvas.showColorStrip,
+        include_cmyk_scale: rollCanvas ? rollCanvas.showColorStrip : true,
         add_print_direction: false
       })
     });
@@ -564,28 +607,47 @@ async function exportImpositionPdf() {
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/pdf')) {
       const blob = await res.blob();
+      const pdfFileName = `${cleanOriginalName}.pdf`;
+
+      // 1. Mobile & Web Share API support (iPhone Safari, Telegram in-app browser, Android Chrome)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      let sharedSuccessfully = false;
+
+      if (isMobile && navigator.canShare) {
+        try {
+          const pdfFile = new File([blob], pdfFileName, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [pdfFile] })) {
+            await navigator.share({
+              files: [pdfFile],
+              title: pdfFileName,
+            });
+            sharedSuccessfully = true;
+          }
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') {
+            // User cancelled share sheet
+            return;
+          }
+          console.warn('Native share failed, using download fallback:', shareErr);
+        }
+      }
+
+      if (sharedSuccessfully) return;
+
+      // 2. Standard Blob Download for Desktop / Fallback
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `${cleanOriginalName}.pdf`;
+      link.download = pdfFileName;
       document.body.appendChild(link);
       link.click();
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(downloadUrl);
-      }, 1000);
+      }, 1500);
     } else {
       const data = await res.json();
-      if (data.download_url) {
-        const link = document.createElement('a');
-        link.href = data.download_url;
-        link.download = data.filename || `${cleanOriginalName}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        alert(`Помилка експорту: ${data.error || 'Невідома помилка'}`);
-      }
+      alert(`Помилка експорту: ${data.error || 'Невідома помилка'}`);
     }
   } catch (err) {
     console.error('Export failed:', err);

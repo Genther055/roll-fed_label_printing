@@ -108,6 +108,76 @@ class RollCanvas {
         this.render();
       }
     }, { passive: false });
+
+    // Touch Events for Mobile / iPhone / Tablets (Pan & Pinch-to-Zoom)
+    this.container.style.touchAction = 'none';
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchInitOffsetX = 0;
+    let touchInitOffsetY = 0;
+    let isTouching = false;
+    let initialPinchDist = 0;
+    let initialPinchScale = 1;
+    let pinchCenterX = 0;
+    let pinchCenterY = 0;
+
+    this.container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isTouching = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchInitOffsetX = this.offsetX;
+        touchInitOffsetY = this.offsetY;
+        initialPinchDist = 0;
+      } else if (e.touches.length === 2) {
+        isTouching = false;
+        const rect = this.container.getBoundingClientRect();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        initialPinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        initialPinchScale = this.scale;
+        pinchCenterX = (t1.clientX + t2.clientX) / 2 - rect.left;
+        pinchCenterY = (t1.clientY + t2.clientY) / 2 - rect.top;
+      }
+    }, { passive: false });
+
+    this.container.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && isTouching) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        this.offsetX = touchInitOffsetX + dx;
+        this.offsetY = touchInitOffsetY + dy;
+        this.render();
+      } else if (e.touches.length === 2 && initialPinchDist > 0) {
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const factor = dist / initialPinchDist;
+        const newScale = Math.max(0.15, Math.min(12.0, initialPinchScale * factor));
+        if (Math.abs(newScale - this.scale) > 0.0001) {
+          this.offsetX = pinchCenterX - (pinchCenterX - this.offsetX) * (newScale / this.scale);
+          this.offsetY = pinchCenterY - (pinchCenterY - this.offsetY) * (newScale / this.scale);
+          this.scale = newScale;
+          this.render();
+        }
+      }
+    }, { passive: false });
+
+    this.container.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        isTouching = false;
+        initialPinchDist = 0;
+      } else if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchInitOffsetX = this.offsetX;
+        touchInitOffsetY = this.offsetY;
+        isTouching = true;
+        initialPinchDist = 0;
+      }
+    }, { passive: true });
   }
 
   resize() {

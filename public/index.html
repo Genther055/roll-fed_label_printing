@@ -2,7 +2,7 @@
 <html lang="uk" class="dark h-full w-full overflow-hidden">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ROLL-PRINT CAD</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/custom.css">
@@ -37,7 +37,7 @@
 <body class="bg-[#181818] text-[#dedede] h-full w-full flex flex-col overflow-hidden antialiased select-none font-sans">
 
   <!-- Header -->
-  <header class="h-8 px-3 border-b border-[#1c1c1c] bg-[#232323] flex items-center justify-between shrink-0 z-30">
+  <header class="h-9 px-2 sm:px-3 border-b border-[#1c1c1c] bg-[#232323] flex items-center justify-between shrink-0 z-30">
     
     <!-- Brand -->
     <div class="flex items-center gap-2">
@@ -47,7 +47,7 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-1.5">
-      <button id="btnTechPassport" class="cad-btn h-6 px-2.5 py-0.5 text-[11px] active:scale-95 transition">
+      <button id="btnTechPassport" class="cad-btn h-7 px-2.5 py-1 text-xs active:scale-95 transition">
         Паспорт
       </button>
       <button id="btnExportPdf" class="cad-btn-primary h-6 px-2.5 py-0.5 text-[11px] active:scale-95 transition">
@@ -57,7 +57,7 @@
   </header>
 
   <!-- Sub-Toolbar -->
-  <div class="h-8 px-3 border-b border-[#1c1c1c] bg-[#262626] flex items-center justify-between shrink-0 z-30 gap-2 relative">
+  <div class="h-8.5 px-2 sm:px-3 border-b border-[#1c1c1c] bg-[#262626] flex items-center justify-between shrink-0 z-30 gap-1.5 overflow-x-auto no-scrollbar relative">
     
     <!-- Mode Controls -->
     <div class="flex items-center gap-1.5 shrink-0">
@@ -187,11 +187,24 @@
 
   </div>
 
+  <!-- Mobile Segmented Tab Switcher (Visible on screens < 1024px) -->
+  <div class="lg:hidden flex items-center bg-[#202020] border-b border-[#1c1c1c] p-1 gap-1 shrink-0 z-20">
+    <button id="mobileTabParams" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-semibold bg-[#3a3a3a] text-white flex items-center justify-center gap-1.5 active:scale-95 transition shadow-sm">
+      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+      <span>Параметри</span>
+    </button>
+    <button id="mobileTabCanvas" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-medium text-[#969696] hover:text-white flex items-center justify-center gap-1.5 active:scale-95 transition">
+      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" /></svg>
+      <span>Полотно</span>
+      <span id="mobileYieldPill" class="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-[#1e293b] text-[#38bdf8] border border-[#0284c7]/40">...</span>
+    </button>
+  </div>
+
   <!-- Workspace: Sidebar & Canvas -->
-  <div class="flex-1 min-h-0 w-full flex overflow-hidden bg-[#181818]">
+  <div class="flex-1 min-h-0 w-full flex flex-col lg:flex-row overflow-hidden bg-[#181818]">
     
     <!-- Left Sidebar: Controls & Inspector -->
-    <aside class="w-[350px] border-r border-[#1c1c1c] bg-[#282828] overflow-y-auto p-3 flex flex-col gap-2.5 shrink-0 h-full">
+    <aside id="sidebarPanel" class="w-full lg:w-[350px] border-r border-[#1c1c1c] bg-[#282828] overflow-y-auto p-2.5 sm:p-3 flex flex-col gap-2.5 shrink-0 h-full">
       
       <!-- Section 1: Label File Selection & Dropzone -->
       <div class="studio-card rounded-[4px] p-2.5">
