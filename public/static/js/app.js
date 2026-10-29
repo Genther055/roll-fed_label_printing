@@ -386,13 +386,13 @@ function initUIEvents() {
     rollCanvas.setOrientation('horizontal');
     btnHoriz.className = 'cad-segment-btn active flex items-center gap-1 whitespace-nowrap active:scale-95';
     btnVert.className = 'cad-segment-btn flex items-center gap-1 whitespace-nowrap active:scale-95';
-    if (pill) pill.innerHTML = '1000 мм (хід)';
+    if (pill) pill.innerHTML = '<span class="text-red-500 font-bold">►</span> 1000 мм (хід)';
   });
   btnVert?.addEventListener('click', () => {
     rollCanvas.setOrientation('vertical');
     btnVert.className = 'cad-segment-btn active flex items-center gap-1 whitespace-nowrap active:scale-95';
     btnHoriz.className = 'cad-segment-btn flex items-center gap-1 whitespace-nowrap active:scale-95';
-    if (pill) pill.innerHTML = '1000 мм (хід)';
+    if (pill) pill.innerHTML = '<span class="text-red-500 font-bold">▲</span> 1000 мм (хід)';
   });
 
   // Dropdown Menu: Layers & Prepress Marks
@@ -424,7 +424,7 @@ function initUIEvents() {
   }
 
   function updateLayersCountBadge() {
-    const ids = ['chkCutContour', 'chkBleed', 'chkPrintableZone', 'chkEyeMarks', 'chkRulers'];
+    const ids = ['chkCutContour', 'chkBleed', 'chkPrintableZone', 'chkEyeMarks', 'chkPrintDirection', 'chkRulers'];
     const activeCount = ids.filter(id => document.getElementById(id)?.checked).length;
     const badge = document.getElementById('layersCountBadge');
     if (badge) badge.innerText = activeCount;
@@ -448,6 +448,11 @@ function initUIEvents() {
   });
   document.getElementById('chkEyeMarks')?.addEventListener('change', (e) => {
     rollCanvas.showEyeMarks = e.target.checked;
+    rollCanvas.render();
+    updateLayersCountBadge();
+  });
+  document.getElementById('chkPrintDirection')?.addEventListener('change', (e) => {
+    rollCanvas.showPrintDirection = e.target.checked;
     rollCanvas.render();
     updateLayersCountBadge();
   });

@@ -76,7 +76,7 @@
       <div class="relative shrink-0" id="layersDropdownContainer">
         <button id="btnLayersDropdown" type="button" class="cad-btn h-5.5 px-2 text-[10.5px] flex items-center gap-1 active:scale-95 whitespace-nowrap">
           <span>Шари</span>
-          <span id="layersCountBadge" class="px-1 rounded-full text-[9px] font-bold bg-[#283149] text-white border border-[#3e4968]">5</span>
+          <span id="layersCountBadge" class="px-1 rounded-full text-[9px] font-bold bg-[#283149] text-white border border-[#3e4968]">6</span>
           <svg id="dropdownArrow" class="w-2.5 h-2.5 text-[#969696] transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
@@ -125,6 +125,15 @@
               <input type="checkbox" id="chkEyeMarks" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-blue-500 focus:ring-0 cursor-pointer">
             </label>
 
+            <!-- 4. Print Direction -->
+            <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span class="text-xs font-medium text-[#dedede] group-hover:text-white">Напрямок друку</span>
+              </div>
+              <input type="checkbox" id="chkPrintDirection" checked class="w-4 h-4 rounded bg-[#181818] border-[#383838] text-red-500 focus:ring-0 cursor-pointer">
+            </label>
+
             <!-- 5. CMYK Color Scale -->
             <label class="flex items-center justify-between p-1.5 rounded-[3px] hover:bg-[#323232] cursor-pointer transition select-none group">
               <div class="flex items-center gap-2">
@@ -164,7 +173,7 @@
     <div class="flex items-center gap-1 shrink-0">
       
       <!-- Direction Pill -->
-      <div id="printDirectionPill" class="h-5.5 px-2 rounded-[3px] text-[10px] font-mono font-medium bg-[#222222] text-[#9ca3af] border border-[#333333] whitespace-nowrap flex items-center">1000 мм (хід)</div>
+      <div id="printDirectionPill" class="h-5.5 px-2 rounded-[3px] text-[10px] font-mono font-medium bg-[#222222] text-red-400 border border-red-500/25 whitespace-nowrap flex items-center gap-1"><span class="text-red-500 font-bold">►</span> 1000 мм (хід)</div>
 
       <div class="w-px h-3.5 bg-[#333333] mx-0.5"></div>
 

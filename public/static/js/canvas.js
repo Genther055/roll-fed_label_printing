@@ -20,7 +20,7 @@ class RollCanvas {
     this.webOrientation = 'horizontal'; // 'horizontal' or 'vertical'
     this.showCutContour = true;
     this.showRulers = true;
-    this.showPrintDirection = false;
+    this.showPrintDirection = true;
     this.showColorStrip = true;
     this.showPrintableZone = true;
     this.showEyeMarks = true;
@@ -229,7 +229,7 @@ class RollCanvas {
 
     // Leave generous padding for rulers, top scale, lane labels, and direction arrow
     const extraMmX = 90;
-    const extraMmY = 40;
+    const extraMmY = 55;
     const availW = Math.max(100, rect.width - 50);
     const availH = Math.max(100, rect.height - 50);
 
@@ -508,7 +508,9 @@ class RollCanvas {
     }
 
     // 7. Draw External Print Direction Indicator Guide
-    // External banner removed
+    if (this.showPrintDirection) {
+      this.drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth);
+    }
 
     ctx.restore();
   }
@@ -698,7 +700,99 @@ class RollCanvas {
 
   drawPrintDirection(ctx, isHoriz, webLength, webWidth) {}
 
-  drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth) {}
+  drawExternalPrintDirectionBanner(ctx, isHoriz, webLength, webWidth) {
+    ctx.save();
+    ctx.strokeStyle = '#ef4444';
+    ctx.fillStyle = '#ef4444';
+
+    if (isHoriz) {
+      // Horizontal mode: arrow below the roll in the dark workspace
+      const arrowY = webWidth + 18.0;
+      const startX = 60.0;
+      const endX = webLength - 40.0;
+
+      // Solid arrow shaft line
+      ctx.lineWidth = 1.4 / this.scale;
+      ctx.beginPath();
+      ctx.moveTo(startX, arrowY);
+      ctx.lineTo(endX, arrowY);
+      ctx.stroke();
+
+      // Filled arrowhead at endX pointing right
+      const headL = 9.0;
+      const headW = 4.2;
+      ctx.beginPath();
+      ctx.moveTo(endX, arrowY);
+      ctx.lineTo(endX - headL, arrowY - headW);
+      ctx.lineTo(endX - headL * 0.7, arrowY);
+      ctx.lineTo(endX - headL, arrowY + headW);
+      ctx.closePath();
+      ctx.fill();
+
+      // Chevrons along line
+      ctx.lineWidth = 1.2 / this.scale;
+      for (let cx = startX + 160; cx < endX - 80; cx += 220) {
+        ctx.beginPath();
+        ctx.moveTo(cx - 4, arrowY - 2.8);
+        ctx.lineTo(cx + 2, arrowY);
+        ctx.lineTo(cx - 4, arrowY + 2.8);
+        ctx.stroke();
+      }
+
+      // Label below the arrow: "напрямок друку"
+      const fontMm = 4.2;
+      ctx.font = `bold ${fontMm}px JetBrains Mono, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('напрямок друку', (startX + endX) / 2, arrowY + 4.5);
+
+    } else {
+      // Vertical mode: arrow to the right of the roll pointing UP
+      const arrowX = webWidth + 18.0;
+      const startY = webLength - 60.0;
+      const endY = 40.0;
+
+      // Solid arrow shaft line pointing UP
+      ctx.lineWidth = 1.4 / this.scale;
+      ctx.beginPath();
+      ctx.moveTo(arrowX, startY);
+      ctx.lineTo(arrowX, endY);
+      ctx.stroke();
+
+      // Filled arrowhead at endY pointing UP
+      const headL = 9.0;
+      const headW = 4.2;
+      ctx.beginPath();
+      ctx.moveTo(arrowX, endY);
+      ctx.lineTo(arrowX - headW, endY + headL);
+      ctx.lineTo(arrowX, endY + headL * 0.7);
+      ctx.lineTo(arrowX + headW, endY + headL);
+      ctx.closePath();
+      ctx.fill();
+
+      // Chevrons pointing UP
+      ctx.lineWidth = 1.2 / this.scale;
+      for (let cy = startY - 160; cy > endY + 80; cy -= 220) {
+        ctx.beginPath();
+        ctx.moveTo(arrowX - 2.8, cy + 4);
+        ctx.lineTo(arrowX, cy - 2);
+        ctx.lineTo(arrowX + 2.8, cy + 4);
+        ctx.stroke();
+      }
+
+      // Label alongside the arrow
+      ctx.save();
+      const fontMm = 4.2;
+      ctx.font = `bold ${fontMm}px JetBrains Mono, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.translate(arrowX + 5.5, (startY + endY) / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('напрямок друку', 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
 
   drawRulers(ctx, isHoriz, webLength, webWidth) {
     ctx.save();
