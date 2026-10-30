@@ -201,7 +201,7 @@
     <button id="mobileTabParams" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-semibold bg-[#3a3a3a] text-white flex items-center justify-center gap-1.5 active:scale-95 transition shadow-sm">
       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
       <span>Параметри</span>
-    </button>
+    </button>         
     <button id="mobileTabCanvas" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-medium text-[#969696] hover:text-white flex items-center justify-center gap-1.5 active:scale-95 transition">
       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" /></svg>
       <span>Полотно</span>
@@ -374,11 +374,11 @@
           </div>
           <div>
             <label class="block text-[10px] text-[#969696] mb-0.5">Пропуск вбік (X):</label>
-            <input type="number" id="gapXInput" step="0.5" value="2" class="studio-input w-full px-2 py-1 text-xs">
+            <input type="number" id="gapXInput" step="0.5" value="2" min="0" class="studio-input w-full px-2 py-1 text-xs">
           </div>
           <div>
             <label class="block text-[10px] text-[#969696] mb-0.5">Пропуск по висоті (Y):</label>
-            <input type="number" id="gapYInput" step="0.5" value="2" class="studio-input w-full px-2 py-1 text-xs">
+            <input type="number" id="gapYInput" step="0.5" value="2" min="0" class="studio-input w-full px-2 py-1 text-xs">
           </div>
           <div class="col-span-2">
             <label class="block text-[10px] text-[#969696] mb-0.5">Макс. ширина друку (ліміт):</label>

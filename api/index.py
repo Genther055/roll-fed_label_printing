@@ -170,17 +170,25 @@ def api_inspect():
 
 @app.route("/api/calculate", methods=["POST"])
 @app.route("/calculate", methods=["POST"])
+def safe_float(val, default=0.0):
+    if val is None or val == "":
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 def api_calculate():
     data = request.get_json(force=True, silent=True) or {}
 
-    label_w = float(data.get("label_width", 24.0))
-    label_h = float(data.get("label_height", 40.0))
-    bleed = float(data.get("bleed", 0.0))
-    roll_w = float(data.get("roll_width", 330.0))
-    printable_w = float(data.get("printable_width", 305.0))
-    meter_l = float(data.get("meter_length", 1000.0))
-    gap_x = float(data.get("gap_x", 2.0))
-    gap_y = float(data.get("gap_y", 2.0))
+    label_w = safe_float(data.get("label_width"), 24.0)
+    label_h = safe_float(data.get("label_height"), 40.0)
+    bleed = safe_float(data.get("bleed"), 0.0)
+    roll_w = safe_float(data.get("roll_width"), 330.0)
+    printable_w = safe_float(data.get("printable_width"), 305.0)
+    meter_l = safe_float(data.get("meter_length"), 1000.0)
+    gap_x = safe_float(data.get("gap_x"), 2.0)
+    gap_y = safe_float(data.get("gap_y"), 2.0)
     app_type = data.get("application_type", "manual")
     orient_mode = data.get("orientation_mode", "auto_max")
     winding_scheme = int(data.get("winding_scheme", 1))
@@ -207,12 +215,32 @@ def api_calculate():
 @app.route("/api/export_pdf", methods=["POST"])
 @app.route("/export_pdf", methods=["POST"])
 def api_export_pdf():
-    data = request.get_json(force=True, silent=True) or {}
+    is_multipart = request.content_type and "multipart/form-data" in request.content_type
+    file_item = None
+    temp_file_to_clean = None
+
+    if is_multipart:
+        data = request.form.to_dict()
+        file_item = request.files.get("file")
+        layout_raw = data.get("layout")
+        layout = json.loads(layout_raw) if layout_raw else {}
+    else:
+        data = request.get_json(force=True, silent=True) or {}
+        layout = data.get("layout")
+
     filename = data.get("filename")
     original_filename = data.get("original_filename")
     file_type = data.get("type", "sample")
 
-    if file_type == "none" or not filename:
+    src_path = None
+    if file_item and file_item.filename:
+        unique_name = f"{uuid.uuid4().hex[:8]}_{file_item.filename}"
+        src_path = os.path.join(UPLOADS_DIR, unique_name)
+        file_item.save(src_path)
+        temp_file_to_clean = src_path
+        if not original_filename:
+            original_filename = file_item.filename
+    elif file_type == "none" or not filename:
         src_path = None
     elif file_type == "upload":
         src_path = os.path.join(UPLOADS_DIR, filename)
@@ -220,10 +248,12 @@ def api_export_pdf():
         src_path = os.path.join(SAMPLES_DIR, filename)
 
     if src_path and not os.path.exists(src_path):
-        return jsonify({"error": "Source file not found"}), 404
+        return jsonify({"error": "Файл макета не знайдено на сервері. Будь ласка, завантажте макет повторно."}), 404
 
-    layout = data.get("layout")
     if not layout:
+        if temp_file_to_clean and os.path.exists(temp_file_to_clean):
+            try: os.remove(temp_file_to_clean)
+            except Exception: pass
         return jsonify({"error": "No layout provided"}), 400
 
     if original_filename:
@@ -237,11 +267,20 @@ def api_export_pdf():
 
     base_no_ext = os.path.splitext(clean_name)[0]
     download_name = f"{base_no_ext}.pdf"
-    disk_name = f"{uuid.uuid4().hex[:8]}_{download_name}"
-    out_path = os.path.join(UPLOADS_DIR, disk_name)
 
     circulation = int(data.get("circulation") or 10000)
-    waste = data.get("waste", "5")
+    waste = str(data.get("waste", "5"))
+
+    def parse_bool(val, default=True):
+        if val is None: return default
+        if isinstance(val, bool): return val
+        return str(val).lower() in ("true", "1", "yes")
+
+    add_eye_marks = parse_bool(data.get("add_eye_marks"), True)
+    add_cut_lines = parse_bool(data.get("add_cut_lines"), True)
+    add_info_banner = parse_bool(data.get("add_info_banner"), True)
+    include_cmyk_scale = parse_bool(data.get("include_cmyk_scale"), True)
+    add_print_direction = parse_bool(data.get("add_print_direction"), False)
 
     try:
         pdf_bytes = generate_imposition_pdf(
@@ -249,12 +288,12 @@ def api_export_pdf():
             layout_result=layout,
             output_pdf_path=None,
             original_filename=clean_name,
-            add_eye_marks=data.get("add_eye_marks", True),
-            add_cut_lines=data.get("add_cut_lines", True),
-            add_info_banner=data.get("add_info_banner", True),
-            include_cmyk_scale=data.get("include_cmyk_scale", True),
-            add_print_direction=False,
-            sheet_number=data.get("sheet_number", 5),
+            add_eye_marks=add_eye_marks,
+            add_cut_lines=add_cut_lines,
+            add_info_banner=add_info_banner,
+            include_cmyk_scale=include_cmyk_scale,
+            add_print_direction=add_print_direction,
+            sheet_number=int(data.get("sheet_number") or 5),
             circulation=circulation,
             waste=waste
         )
@@ -268,6 +307,12 @@ def api_export_pdf():
         return response
     except Exception as e:
         return jsonify({"error": f"PDF Export failed: {str(e)}"}), 500
+    finally:
+        if temp_file_to_clean and os.path.exists(temp_file_to_clean):
+            try:
+                os.remove(temp_file_to_clean)
+            except Exception:
+                pass
 
 @app.route("/download/<path:filename>", methods=["GET"])
 @app.route("/api/download/<path:filename>", methods=["GET"])

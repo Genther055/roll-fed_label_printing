@@ -334,7 +334,7 @@ class RollCanvas {
     if (this.showEyeMarks && this.layout.active.repeats > 0) {
       const pMargin = (rollW - printableW) / 2;
       const stepX = this.layout.active.step_x;
-      const startX = (this.layout.positions[0] && this.layout.positions[0].x) || 2;
+      const startX = (this.layout.positions[0] && typeof this.layout.positions[0].x === 'number') ? this.layout.positions[0].x : 2;
       ctx.fillStyle = '#0f172a';
 
       for (let r = 0; r < this.layout.active.repeats; r++) {

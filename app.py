@@ -117,18 +117,26 @@ class InspectHandler(BaseHandler):
             self.set_status(500)
             self.write({"error": str(e)})
 
+def safe_float(val, default=0.0):
+    if val is None or val == "":
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 class CalculateHandler(BaseHandler):
     def post(self):
         data = json_decode(self.request.body)
 
-        label_w = float(data.get("label_width", 24.0))
-        label_h = float(data.get("label_height", 40.0))
-        bleed = float(data.get("bleed", 0.0))
-        roll_w = float(data.get("roll_width", 330.0))
-        printable_w = float(data.get("printable_width", 305.0))
-        meter_l = float(data.get("meter_length", 1000.0))
-        gap_x = float(data.get("gap_x", 2.0))
-        gap_y = float(data.get("gap_y", 2.0))
+        label_w = safe_float(data.get("label_width"), 24.0)
+        label_h = safe_float(data.get("label_height"), 40.0)
+        bleed = safe_float(data.get("bleed"), 0.0)
+        roll_w = safe_float(data.get("roll_width"), 330.0)
+        printable_w = safe_float(data.get("printable_width"), 305.0)
+        meter_l = safe_float(data.get("meter_length"), 1000.0)
+        gap_x = safe_float(data.get("gap_x"), 2.0)
+        gap_y = safe_float(data.get("gap_y"), 2.0)
         app_type = data.get("application_type", "manual")
         orient_mode = data.get("orientation_mode", "auto_max")
         winding_scheme = int(data.get("winding_scheme", 1))

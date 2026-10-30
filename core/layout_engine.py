@@ -78,6 +78,8 @@ def calculate_layout(
     """
     Calculates the optimal roll imposition for the label.
     """
+    gap_x = max(0.0, float(gap_x))
+    gap_y = max(0.0, float(gap_y))
     # Evaluate Portrait (0 deg) and Landscape (90 deg)
     portrait_res = evaluate_variant(label_width, label_height, 0, roll_width, printable_width, meter_length, gap_x, gap_y)
     landscape_res = evaluate_variant(label_width, label_height, 90, roll_width, printable_width, meter_length, gap_x, gap_y)

@@ -2,6 +2,7 @@ let rollCanvas = null;
 let currentFile = null;
 let currentPreviewUrl = null;
 let currentLayout = null;
+let currentUploadedFile = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   rollCanvas = new RollCanvas('rollCanvas', 'canvasContainer');
@@ -64,6 +65,7 @@ async function loadSamples() {
 }
 
 async function selectSample(filename) {
+  currentUploadedFile = null;
   // Highlight active button using CSS classes
   document.querySelectorAll('.sample-btn').forEach(b => {
     b.classList.remove('active');
@@ -88,14 +90,24 @@ async function selectSample(filename) {
 
 const CAD_SVG_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48"><rect x="3" y="3" width="34" height="42" rx="3" fill="%230f172a" stroke="%23ec4899" stroke-width="2" stroke-dasharray="3,2"/><text x="20" y="24" font-family="sans-serif" font-size="8" font-weight="bold" fill="%2338bdf8" text-anchor="middle">CAD</text><text x="20" y="34" font-family="sans-serif" font-size="6" fill="%2394a3b8" text-anchor="middle">CUT</text></svg>`;
 
+function parseNumInput(id, fallback, minVal = 0) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const s = String(el.value).trim().replace(',', '.');
+  if (s === '') return fallback;
+  const n = parseFloat(s);
+  return isNaN(n) ? fallback : Math.max(minVal, n);
+}
+
 function setDimensionOnlyMode() {
+  currentUploadedFile = null;
   document.querySelectorAll('.sample-btn').forEach(b => {
     b.classList.remove('border-[#38bdf8]', 'bg-[#18233a]', 'ring-1', 'ring-[#38bdf8]/40');
     b.classList.add('border-[#22283a]', 'bg-[#11141d]');
   });
 
-  const labelW = parseFloat(document.getElementById('labelWidthInput').value) || 50.0;
-  const labelH = parseFloat(document.getElementById('labelHeightInput').value) || 80.0;
+  const labelW = parseNumInput('labelWidthInput', 50.0, 0.1);
+  const labelH = parseNumInput('labelHeightInput', 80.0, 0.1);
 
   const displayName = `спуск_висічки_${labelW}x${labelH}мм`;
   currentFile = { 
@@ -143,14 +155,14 @@ function applyFileInspection(info, filename, type) {
 }
 
 async function recalculate() {
-  const labelW = parseFloat(document.getElementById('labelWidthInput').value) || 24.0;
-  const labelH = parseFloat(document.getElementById('labelHeightInput').value) || 40.0;
-  const bleed = parseFloat(document.getElementById('bleedInput').value) || 0.0;
-  const rollW = parseFloat(document.getElementById('rollWidthInput').value) || 330.0;
-  const printableW = parseFloat(document.getElementById('printableWidthInput').value) || 305.0;
-  const gapX = parseFloat(document.getElementById('gapXInput').value) || 2.0;
-  const gapY = parseFloat(document.getElementById('gapYInput').value) || 2.0;
-  const meterL = parseFloat(document.getElementById('meterLengthInput').value) || 1000.0;
+  const labelW = parseNumInput('labelWidthInput', 24.0, 0.1);
+  const labelH = parseNumInput('labelHeightInput', 40.0, 0.1);
+  const bleed = parseNumInput('bleedInput', 0.0, 0.0);
+  const rollW = parseNumInput('rollWidthInput', 330.0, 10.0);
+  const printableW = parseNumInput('printableWidthInput', 305.0, 10.0);
+  const gapX = parseNumInput('gapXInput', 2.0, 0.0);
+  const gapY = parseNumInput('gapYInput', 2.0, 0.0);
+  const meterL = parseNumInput('meterLengthInput', 1000.0, 10.0);
 
   if (currentFile && currentFile.isNoFile) {
     const displayName = `спуск_висічки_${labelW}x${labelH}мм`;
@@ -304,7 +316,10 @@ function initUIEvents() {
   ];
   inputIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', debounce(recalculate, 200));
+    if (el) {
+      el.addEventListener('input', debounce(recalculate, 200));
+      el.addEventListener('change', recalculate);
+    }
   });
 
   // App type radio
@@ -533,6 +548,7 @@ function initUIEvents() {
 }
 
 async function uploadFile(file) {
+  currentUploadedFile = file;
   const dropzoneContent = document.getElementById('dropzoneContent');
   const dropzoneLoading = document.getElementById('dropzoneLoading');
   if (dropzoneContent && dropzoneLoading) {
@@ -585,23 +601,46 @@ async function exportImpositionPdf() {
   const wasteVal = document.getElementById('calcWastePercent')?.value || '5';
 
   try {
-    const res = await fetch('/api/export_pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: currentFile ? currentFile.filename : null,
-        original_filename: cleanOriginalName,
-        type: currentFile ? currentFile.type : 'none',
-        layout: currentLayout,
-        circulation: circVal,
-        waste: wasteVal,
-        add_eye_marks: rollCanvas ? rollCanvas.showEyeMarks : true,
-        add_cut_lines: rollCanvas ? rollCanvas.showCutContour : true,
-        add_info_banner: true,
-        include_cmyk_scale: rollCanvas ? rollCanvas.showColorStrip : true,
-        add_print_direction: false
-      })
-    });
+    let fetchOptions;
+    if (currentFile && currentFile.type === 'upload' && currentUploadedFile) {
+      const formData = new FormData();
+      formData.append('file', currentUploadedFile);
+      formData.append('filename', currentFile.filename || currentUploadedFile.name);
+      formData.append('original_filename', cleanOriginalName);
+      formData.append('type', 'upload');
+      formData.append('layout', JSON.stringify(currentLayout));
+      formData.append('circulation', circVal);
+      formData.append('waste', wasteVal);
+      formData.append('add_eye_marks', String(rollCanvas ? rollCanvas.showEyeMarks : true));
+      formData.append('add_cut_lines', String(rollCanvas ? rollCanvas.showCutContour : true));
+      formData.append('add_info_banner', 'true');
+      formData.append('include_cmyk_scale', String(rollCanvas ? rollCanvas.showColorStrip : true));
+      formData.append('add_print_direction', 'false');
+      fetchOptions = {
+        method: 'POST',
+        body: formData
+      };
+    } else {
+      fetchOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: currentFile ? currentFile.filename : null,
+          original_filename: cleanOriginalName,
+          type: currentFile ? currentFile.type : 'none',
+          layout: currentLayout,
+          circulation: circVal,
+          waste: wasteVal,
+          add_eye_marks: rollCanvas ? rollCanvas.showEyeMarks : true,
+          add_cut_lines: rollCanvas ? rollCanvas.showCutContour : true,
+          add_info_banner: true,
+          include_cmyk_scale: rollCanvas ? rollCanvas.showColorStrip : true,
+          add_print_direction: false
+        })
+      };
+    }
+
+    const res = await fetch('/api/export_pdf', fetchOptions);
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
