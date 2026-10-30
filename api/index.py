@@ -168,8 +168,6 @@ def api_inspect():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/calculate", methods=["POST"])
-@app.route("/calculate", methods=["POST"])
 def safe_float(val, default=0.0):
     if val is None or val == "":
         return default
@@ -178,6 +176,8 @@ def safe_float(val, default=0.0):
     except (ValueError, TypeError):
         return default
 
+@app.route("/api/calculate", methods=["POST"])
+@app.route("/calculate", methods=["POST"])
 def api_calculate():
     data = request.get_json(force=True, silent=True) or {}
 
