@@ -643,8 +643,14 @@ async function exportImpositionPdf() {
     const res = await fetch('/api/export_pdf', fetchOptions);
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(`Помилка експорту: ${err.error || res.statusText}`);
+      let errMsg = '';
+      try {
+        const err = await res.json();
+        errMsg = err.error || err.message || '';
+      } catch (_) {
+        errMsg = await res.text().catch(() => '');
+      }
+      alert(`Помилка експорту: ${errMsg || res.statusText || ('HTTP ' + res.status)}`);
       return;
     }
 
