@@ -9,11 +9,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "/api/index.py"
+      "destination": "/api/index.py?__path__=/api/:match*"
     },
     {
       "source": "/download/:match*",
-      "destination": "/api/index.py"
+      "destination": "/api/index.py?__path__=/download/:match*"
     }
   ]
 }

@@ -35,19 +35,19 @@ class VercelPathMiddleware:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        matched = environ.get("HTTP_X_MATCHED_PATH")
-        if not matched or matched in ("/api/index.py", "/api/index"):
-            raw_uri = environ.get("RAW_URI") or environ.get("REQUEST_URI") or ""
-            matched = raw_uri.split("?")[0]
-
         query = environ.get("QUERY_STRING", "")
-        if "__path__=" in query:
+        if query:
             qs = urllib.parse.parse_qs(query)
             if "__path__" in qs and qs["__path__"]:
-                matched = qs["__path__"][0]
+                environ["PATH_INFO"] = qs["__path__"][0]
+            elif "match" in qs and qs["match"]:
+                m = qs["match"][0]
+                environ["PATH_INFO"] = m if m.startswith("/") else f"/api/{m}"
+        elif environ.get("HTTP_X_MATCHED_PATH"):
+            hp = environ.get("HTTP_X_MATCHED_PATH")
+            if hp not in ("/api/index.py", "/api/index"):
+                environ["PATH_INFO"] = hp
 
-        if matched and matched not in ("/api/index.py", "/api/index"):
-            environ["PATH_INFO"] = matched
         return self.wsgi_app(environ, start_response)
 
 app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
