@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ROLL-PRINT CAD</title>
+    <!-- PDF.js for client-side processing & high-res print rasterization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      try {
+        const workerBlob = new Blob([
+          "importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');"
+        ], { type: 'application/javascript' });
+        pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(workerBlob);
+      } catch (e) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/custom.css">
   <script>
@@ -402,7 +416,7 @@
           <!-- Selection Tool -->
           <button class="w-6.5 h-6.5 rounded-[3px] bg-[#4772b3] text-white flex items-center justify-center text-xs shadow-sm font-bold active:scale-95 transition" title="Інструмент вибору">
             ↖
-          </button>         
+          </button>          
           <!-- Axis Indicator -->
           <div class="text-[8.5px] font-mono text-center text-[#969696] py-0.5 border-t border-b border-[#303030] select-none leading-tight">
             Z<br><span class="text-[#dedede] font-bold">+85</span>

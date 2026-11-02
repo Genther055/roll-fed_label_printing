@@ -99,9 +99,9 @@ def _inspect_pdf(file_path):
 
 def _inspect_image(file_path):
     img = Image.open(file_path)
-    dpi = img.info.get("dpi", (150, 150))
-    dpi_x = float(dpi[0]) if dpi[0] > 0 else 150.0
-    dpi_y = float(dpi[1]) if dpi[1] > 0 else 150.0
+    dpi = img.info.get("dpi", (300, 300))
+    dpi_x = float(dpi[0]) if dpi[0] > 0 else 300.0
+    dpi_y = float(dpi[1]) if dpi[1] > 0 else 300.0
 
     w_px, h_px = img.size
     w_mm = round((w_px / dpi_x) * 25.4, 1)

@@ -137,6 +137,13 @@ def api_upload():
 
     try:
         info = inspect_file(fpath)
+        meta_w = request.form.get("cut_width_mm") or request.form.get("width_mm")
+        meta_h = request.form.get("cut_height_mm") or request.form.get("height_mm")
+        meta_b = request.form.get("bleed_mm")
+        cut_w = float(meta_w) if meta_w else info["cut_width_mm"]
+        cut_h = float(meta_h) if meta_h else info["cut_height_mm"]
+        bleed_val = float(meta_b) if meta_b else info["bleed_mm"]
+
         return jsonify({
             "id": unique_name,
             "name": os.path.splitext(filename)[0],
@@ -144,9 +151,9 @@ def api_upload():
             "original_filename": filename,
             "file_type": info["file_type"],
             "type": "upload",
-            "cut_width_mm": info["cut_width_mm"],
-            "cut_height_mm": info["cut_height_mm"],
-            "bleed_mm": info["bleed_mm"],
+            "cut_width_mm": cut_w,
+            "cut_height_mm": cut_h,
+            "bleed_mm": bleed_val,
             "preview_data_url": info["preview_data_url"]
         })
     except Exception as e:

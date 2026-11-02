@@ -547,7 +547,58 @@ function initUIEvents() {
   document.getElementById('btnTechPassport')?.addEventListener('click', openTechPassportModal);
 }
 
-async function compressImageFile(file, maxDimension = 3000, quality = 0.92) {
+async function compressPdfFileWithPdfJs(file) {
+  if (typeof pdfjsLib === 'undefined') return file;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDoc = await loadingTask.promise;
+    if (pdfDoc.numPages === 0) return file;
+
+    const page = await pdfDoc.getPage(1);
+
+    // Physical dimensions in PDF points (72 pt = 1 inch = 25.4 mm)
+    const view = page.view;
+    const ptWidth = Math.abs(view[2] - view[0]);
+    const ptHeight = Math.abs(view[3] - view[1]);
+    const extractedWidthMm = Math.round((ptWidth * 25.4 / 72.0) * 10) / 10;
+    const extractedHeightMm = Math.round((ptHeight * 25.4 / 72.0) * 10) / 10;
+
+    // 300 DPI flexo print resolution: scale = 300 / 72 ≈ 4.1667
+    let scale = 300.0 / 72.0;
+    let viewport = page.getViewport({ scale });
+
+    // Ensure within reasonable canvas limits (max 3800px on longest side)
+    const maxDim = 3800;
+    if (viewport.width > maxDim || viewport.height > maxDim) {
+      const downscale = Math.min(maxDim / viewport.width, maxDim / viewport.height);
+      scale = scale * downscale;
+      viewport = page.getViewport({ scale });
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    const ctx = canvas.getContext('2d');
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return resolve(file);
+        const optFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: 'image/png' });
+        optFile.extractedWidthMm = extractedWidthMm;
+        optFile.extractedHeightMm = extractedHeightMm;
+        resolve(optFile);
+      }, 'image/png');
+    });
+  } catch (err) {
+    console.warn('PDF.js compression fallback:', err);
+    return file;
+  }
+}
+
+async function compressImageFile(file, maxDimension = 3600, quality = 0.92) {
   return new Promise((resolve) => {
     if (!file.type.startsWith('image/')) return resolve(file);
     const img = new Image();
@@ -573,7 +624,7 @@ async function compressImageFile(file, maxDimension = 3000, quality = 0.92) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob((blob) => {
-        if (!blob || blob.size >= file.size) return resolve(file);
+        if (!blob) return resolve(file);
         const optFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: 'image/png' });
         resolve(optFile);
       }, 'image/png');
@@ -587,29 +638,65 @@ async function compressImageFile(file, maxDimension = 3000, quality = 0.92) {
 }
 
 async function uploadFile(file) {
-  // Check maximum file size for Vercel Serverless Function (4.5 MB limit)
   const MAX_BYTES = 4.5 * 1024 * 1024;
   let fileToUpload = file;
 
-  if (file.type.startsWith('image/') && file.size > 3.0 * 1024 * 1024) {
+  const dropzoneContent = document.getElementById('dropzoneContent');
+  const dropzoneLoading = document.getElementById('dropzoneLoading');
+  const dropzoneText = dropzoneLoading?.querySelector('div');
+
+  // If file exceeds Vercel 4.5 MB limit
+  if (file.size > MAX_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    
+    // Alert notification as requested by user
+    alert(`Файл завеликий (${sizeMb} МБ).\nЗараз макет буде автоматично оптимізовано та стиснуто без втрати якості (300 DPI) безпосередньо в програмі.`);
+
+    if (dropzoneContent && dropzoneLoading) {
+      dropzoneContent.classList.add('hidden');
+      dropzoneLoading.classList.remove('hidden');
+      if (dropzoneText) dropzoneText.innerText = 'Оптимізація та компресія макета (300 DPI)...';
+    }
+
+    try {
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        fileToUpload = await compressPdfFileWithPdfJs(file);
+      } else if (file.type.startsWith('image/')) {
+        fileToUpload = await compressImageFile(file);
+      }
+    } catch (compErr) {
+      console.warn('Direct compression error:', compErr);
+    }
+
+    if (fileToUpload.size > MAX_BYTES) {
+      alert(`Не вдалося зменшити файл нижче 4.5 МБ (поточний розмір: ${(fileToUpload.size / (1024 * 1024)).toFixed(1)} МБ). Будь ласка, збережіть PDF зі стандартною Flate/JPEG компресією 300 DPI.`);
+      if (dropzoneContent && dropzoneLoading) {
+        dropzoneLoading.classList.add('hidden');
+        dropzoneContent.classList.remove('hidden');
+        if (dropzoneText) dropzoneText.innerText = 'Обробка файлу...';
+      }
+      return;
+    }
+  } else if (file.size > 3.0 * 1024 * 1024 && file.type.startsWith('image/')) {
     fileToUpload = await compressImageFile(file);
   }
 
-  if (fileToUpload.size > MAX_BYTES) {
-    alert(`Файл завеликий (${(fileToUpload.size / (1024 * 1024)).toFixed(1)} МБ). Оптимальний розмір для хмарного спуску — до 4.5 МБ. Будь ласка, збережіть PDF/зображення зі стандартною Flate/JPEG компресією 300 DPI.`);
-    return;
-  }
-
   currentUploadedFile = fileToUpload;
-  const dropzoneContent = document.getElementById('dropzoneContent');
-  const dropzoneLoading = document.getElementById('dropzoneLoading');
+
   if (dropzoneContent && dropzoneLoading) {
     dropzoneContent.classList.add('hidden');
     dropzoneLoading.classList.remove('hidden');
+    if (dropzoneText) dropzoneText.innerText = 'Аналіз контуру та вильотів...';
   }
 
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', fileToUpload);
+  if (fileToUpload.extractedWidthMm) {
+    formData.append('cut_width_mm', String(fileToUpload.extractedWidthMm));
+  }
+  if (fileToUpload.extractedHeightMm) {
+    formData.append('cut_height_mm', String(fileToUpload.extractedHeightMm));
+  }
 
   try {
     const res = await fetch('/api/upload', {
@@ -629,6 +716,7 @@ async function uploadFile(file) {
     if (dropzoneContent && dropzoneLoading) {
       dropzoneLoading.classList.add('hidden');
       dropzoneContent.classList.remove('hidden');
+      if (dropzoneText) dropzoneText.innerText = 'Обробка файлу...';
     }
   }
 }
