@@ -36,6 +36,10 @@ class VercelPathMiddleware:
 
     def __call__(self, environ, start_response):
         matched = environ.get("HTTP_X_MATCHED_PATH")
+        if not matched or matched in ("/api/index.py", "/api/index"):
+            raw_uri = environ.get("RAW_URI") or environ.get("REQUEST_URI") or ""
+            matched = raw_uri.split("?")[0]
+
         query = environ.get("QUERY_STRING", "")
         if "__path__=" in query:
             qs = urllib.parse.parse_qs(query)

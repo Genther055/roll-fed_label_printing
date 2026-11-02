@@ -547,8 +547,60 @@ function initUIEvents() {
   document.getElementById('btnTechPassport')?.addEventListener('click', openTechPassportModal);
 }
 
+async function compressImageFile(file, maxDimension = 3000, quality = 0.92) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) return resolve(file);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width <= maxDimension && height <= maxDimension && file.size <= 3.5 * 1024 * 1024) {
+        return resolve(file);
+      }
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (!blob || blob.size >= file.size) return resolve(file);
+        const optFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: 'image/png' });
+        resolve(optFile);
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
 async function uploadFile(file) {
-  currentUploadedFile = file;
+  // Check maximum file size for Vercel Serverless Function (4.5 MB limit)
+  const MAX_BYTES = 4.5 * 1024 * 1024;
+  let fileToUpload = file;
+
+  if (file.type.startsWith('image/') && file.size > 3.0 * 1024 * 1024) {
+    fileToUpload = await compressImageFile(file);
+  }
+
+  if (fileToUpload.size > MAX_BYTES) {
+    alert(`Файл завеликий (${(fileToUpload.size / (1024 * 1024)).toFixed(1)} МБ). Оптимальний розмір для хмарного спуску — до 4.5 МБ. Будь ласка, збережіть PDF/зображення зі стандартною Flate/JPEG компресією 300 DPI.`);
+    return;
+  }
+
+  currentUploadedFile = fileToUpload;
   const dropzoneContent = document.getElementById('dropzoneContent');
   const dropzoneLoading = document.getElementById('dropzoneLoading');
   if (dropzoneContent && dropzoneLoading) {
