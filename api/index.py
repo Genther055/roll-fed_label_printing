@@ -326,6 +326,74 @@ def api_export_pdf():
             except Exception:
                 pass
 
+@app.route("/api/export_approval_sheet", methods=["POST"])
+@app.route("/export_approval_sheet", methods=["POST"])
+def api_export_approval_sheet():
+    is_multipart = request.content_type and "multipart/form-data" in request.content_type
+    file_item = None
+    temp_file_to_clean = None
+
+    if is_multipart:
+        data = request.form.to_dict()
+        file_item = request.files.get("file")
+        approval_data_raw = data.get("approval_data")
+        approval_data = json.loads(approval_data_raw) if approval_data_raw else data
+    else:
+        data = request.get_json(force=True, silent=True) or {}
+        approval_data = data.get("approval_data") or data
+
+    filename = data.get("filename")
+    original_filename = data.get("original_filename")
+    file_type = data.get("type", "sample")
+
+    src_path = None
+    if file_item and file_item.filename:
+        unique_name = f"{uuid.uuid4().hex[:8]}_{file_item.filename}"
+        src_path = os.path.join(UPLOADS_DIR, unique_name)
+        file_item.save(src_path)
+        temp_file_to_clean = src_path
+        if not original_filename:
+            original_filename = file_item.filename
+    elif file_type == "none" or not filename:
+        src_path = None
+    elif file_type == "upload":
+        src_path = os.path.join(UPLOADS_DIR, filename)
+    else:
+        src_path = os.path.join(SAMPLES_DIR, filename)
+
+    if original_filename:
+        clean_name = original_filename
+    elif src_path:
+        clean_name = re.sub(r'^[a-f0-9]{8}_', '', os.path.basename(src_path))
+    else:
+        clean_name = approval_data.get("filename", "макет")
+
+    base_no_ext = os.path.splitext(clean_name)[0]
+    download_name = f"бланк_погодження_{base_no_ext}.pdf"
+
+    try:
+        from core.approval_sheet_generator import generate_approval_pdf
+        pdf_bytes = generate_approval_pdf(
+            source_file_path=src_path,
+            data=approval_data,
+            output_pdf_path=None
+        )
+        response = Response(pdf_bytes, mimetype="application/pdf")
+        ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
+        quoted_utf8 = urllib.parse.quote(download_name)
+        response.headers["Content-Disposition"] = f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{quoted_utf8}'
+        response.headers["Content-Length"] = str(len(pdf_bytes))
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate approval sheet: {str(e)}"}), 500
+    finally:
+        if temp_file_to_clean and os.path.exists(temp_file_to_clean):
+            try:
+                os.remove(temp_file_to_clean)
+            except Exception:
+                pass
+
 @app.route("/download/<path:filename>", methods=["GET"])
 @app.route("/api/download/<path:filename>", methods=["GET"])
 def api_download(filename):

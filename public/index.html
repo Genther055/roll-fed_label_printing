@@ -61,6 +61,10 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-1.5">
+            <button id="btnApprovalSheet" class="cad-btn h-7 px-2.5 py-1 text-xs active:scale-95 transition bg-[#2a3649] hover:bg-[#3b4c68] text-[#93c5fd] border border-[#3b82f6]/40 flex items-center gap-1 font-semibold" title="Сформувати бланк погодження замовлення для клієнта">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Бланк погодження</span>
+      </button>
       <button id="btnTechPassport" class="cad-btn h-7 px-2.5 py-1 text-xs active:scale-95 transition">
         Паспорт
       </button>
@@ -530,6 +534,224 @@
     </div>
   </div>
 
+  
+  <!-- Approval Sheet Modal (Бланк погодження замовлення) -->
+  <div id="approvalModal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 hidden">
+    <!-- Backdrop -->
+    <div id="btnApprovalModalBackdrop" class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    
+    <!-- Modal Dialog -->
+    <div class="relative bg-[#202020] border border-[#383838] rounded-[6px] max-w-6xl w-full h-[92vh] flex flex-col shadow-2xl overflow-hidden z-10">
+      <!-- Modal Header -->
+      <div class="h-11 px-4 border-b border-[#303030] bg-[#262626] flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#00aeef]"></span>
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Бланк погодження (ТЗ на цифровий рулонний друк)</h3>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#181818] text-[#999999] border border-[#333333]">A4 Альбомний</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnExportApprovalPdf" class="cad-btn-primary h-7 px-3 py-1 text-xs active:scale-95 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Зберегти PDF</span>
+          </button>
+          <button id="btnExportApprovalPng" class="cad-btn h-7 px-3 py-1 text-xs active:scale-95 transition flex items-center gap-1.5 bg-[#2c2c2c] hover:bg-[#383838] text-white">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>Зберегти PNG</span>
+          </button>
+          <button id="btnCloseApprovalModal" type="button" class="text-[#888888] hover:text-white p-1 text-lg leading-none transition ml-2" title="Закрити (Esc)">✕</button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#181818] p-3 gap-3">
+        <!-- Live Preview Canvas -->
+        <div class="flex-1 bg-[#141414] rounded border border-[#2c2c2c] p-2 flex items-center justify-center overflow-auto shadow-inner relative">
+          <canvas id="approvalCanvas" class="max-w-full max-h-full object-contain shadow-2xl border border-[#333333] rounded-[2px] bg-white"></canvas>
+        </div>
+
+        <!-- Settings Sidebar -->
+        <div class="w-full lg:w-96 bg-[#232323] border border-[#2f2f2f] rounded p-3 overflow-y-auto space-y-3.5 shrink-0 text-xs custom-scrollbar">
+          <!-- File info -->
+          <div>
+            <div class="text-[10px] uppercase font-bold text-[#888888] mb-1.5 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 bg-[#00aeef] rounded-full"></span> 1. Інформація про макет
+            </div>
+            <div class="space-y-1.5">
+              <div>
+                <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Назва файлу / макета</label>
+                <input type="text" id="approvalFileName" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Дата бланку</label>
+                  <input type="text" id="approvalDate" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Тираж, шт</label>
+                  <input type="text" id="approvalCirculation" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина (W), мм</label>
+                  <input type="number" id="approvalLabelW" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Висота (H), мм</label>
+                  <input type="number" id="approvalLabelH" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Material & Glue -->
+          <div class="border-t border-[#2e2e2e] pt-2.5">
+            <div class="text-[10px] uppercase font-bold text-[#888888] mb-1.5 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 bg-[#fff200] rounded-full"></span> 2. Матеріал та клей
+            </div>
+            <div class="space-y-1.5">
+              <div>
+                <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Матеріал основи</label>
+                <input type="text" id="approvalMaterial" class="cad-input w-full h-6.5 text-[11px] px-2 text-white" value="білий поліпропілен">
+                <div class="flex flex-wrap gap-1 mt-1">
+                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="білий поліпропілен">Білий ПП</button>
+                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="самоклеючий папір">Папір напівгл.</button>
+                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="прозорий поліпропілен">Прозорий ПП</button>
+                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="металізований поліпропілен">Металізований</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-1">Клей</label>
+                  <div class="flex gap-2">
+                    <label class="flex items-center gap-1 cursor-pointer text-[11px]">
+                      <input type="radio" name="approvalGlue" value="acrylic" checked class="text-[#00aeef] focus:ring-0">
+                      <span>Акрил</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[11px]">
+                      <input type="radio" name="approvalGlue" value="rubber" class="text-[#00aeef] focus:ring-0">
+                      <span>Каучук</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-1">Поклейка</label>
+                  <div class="flex gap-2">
+                    <label class="flex items-center gap-1 cursor-pointer text-[11px]">
+                      <input type="radio" name="approvalApplicator" value="auto" checked class="text-[#00aeef] focus:ring-0">
+                      <span>Автм.</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[11px]">
+                      <input type="radio" name="approvalApplicator" value="manual" class="text-[#00aeef] focus:ring-0">
+                      <span>Ручна</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Roll Parameters -->
+          <div class="border-t border-[#2e2e2e] pt-2.5">
+            <div class="text-[10px] uppercase font-bold text-[#888888] mb-1.5 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 bg-[#ec008c] rounded-full"></span> 3. Параметри рулону
+            </div>
+            <div class="space-y-1.5">
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина полотна, мм</label>
+                  <input type="text" id="approvalRollWidth" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" value="330">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Втулка (діаметр)</label>
+                  <select id="approvalCore" class="cad-input w-full h-6.5 text-[11px] px-1 text-white font-mono">
+                    <option value="76" selected>76 мм (стандарт)</option>
+                    <option value="40">40 мм</option>
+                    <option value="25">25 мм</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Етикеток у рулоні</label>
+                  <input type="text" id="approvalLabelsPerRoll" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" value="1000">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Відстань між етикетками</label>
+                  <input type="text" id="approvalGap" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" value="4 мм (стандарт)">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Рядів у рулоні</label>
+                  <input type="text" id="approvalLanes" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" value="1 шт">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Вихід (мм)</label>
+                  <input type="text" id="approvalExitWidth" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" placeholder="—">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ніж</label>
+                  <input type="text" id="approvalKnife" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" placeholder="—">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colors & Pantone -->
+          <div class="border-t border-[#2e2e2e] pt-2.5">
+            <div class="text-[10px] uppercase font-bold text-[#888888] mb-1.5 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 bg-[#4772b3] rounded-full"></span> 4. Кольори та брендування
+            </div>
+            <div class="space-y-1.5">
+              <div>
+                <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Додаткові кольори (Pantone)</label>
+                <input type="text" id="approvalPantone" class="cad-input w-full h-6.5 text-[11px] px-2 text-white" value="відсутні">
+              </div>
+              <label class="flex items-center gap-1.5 cursor-pointer pt-0.5">
+                <input type="checkbox" id="approvalNoBranding" class="rounded text-[#00aeef] focus:ring-0">
+                <span class="text-[11px] text-[#cccccc]">Без брендування (анонімна упаковка)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Signatures -->
+          <div class="border-t border-[#2e2e2e] pt-2.5">
+            <div class="text-[10px] uppercase font-bold text-[#888888] mb-1.5 flex items-center gap-1 font-mono">
+              <span class="w-1.5 h-1.5 bg-[#a3be8c] rounded-full"></span> 5. Підписи та затвердження
+            </div>
+            <div class="space-y-1.5">
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Менеджер</label>
+                  <input type="text" id="approvalManager" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" placeholder="Прізвище...">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Дизайнер</label>
+                  <input type="text" id="approvalDesigner" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" placeholder="Прізвище...">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Затвердив (Замовник)</label>
+                  <input type="text" id="approvalApprovedBy" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" value="Замовник">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Дата затвердження</label>
+                  <input type="text" id="approvalApprovalDate" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" placeholder="ДД.ММ.РРРР">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- User Guide Modal -->
   <div id="userGuideModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-[#242424] border border-[#383838] rounded-[4px] max-w-2xl w-full p-5 shadow-2xl overflow-y-auto max-h-[90vh] flex flex-col" id="userGuideContent">
@@ -622,6 +844,7 @@
 
   <script src="/static/js/schemes.js"></script>
   <script src="/static/js/canvas.js"></script>
+    <script src="/static/js/approval_sheet.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

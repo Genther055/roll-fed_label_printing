@@ -229,6 +229,69 @@ class ExportPdfHandler(BaseHandler):
             self.set_status(500)
             self.write({"error": f"PDF Export failed: {str(e)}"})
 
+
+from core.approval_sheet_generator import generate_approval_pdf
+
+class ExportApprovalSheetHandler(BaseHandler):
+    def post(self):
+        is_multipart = self.request.headers.get("Content-Type", "").startswith("multipart/form-data")
+        temp_file_to_clean = None
+        src_path = None
+
+        if is_multipart:
+            data = {}
+            for k, v in self.request.body_arguments.items():
+                data[k] = v[0].decode('utf-8', errors='ignore')
+            approval_data_raw = data.get("approval_data")
+            approval_data = json.loads(approval_data_raw) if approval_data_raw else data
+            if "file" in self.request.files:
+                file_info = self.request.files["file"][0]
+                unique_name = f"{uuid.uuid4().hex[:8]}_{file_info['filename']}"
+                src_path = os.path.join(UPLOADS_DIR, unique_name)
+                with open(src_path, "wb") as f:
+                    f.write(file_info["body"])
+                temp_file_to_clean = src_path
+                clean_name = file_info["filename"]
+            else:
+                src_path = None
+                clean_name = approval_data.get("filename", "макет")
+        else:
+            data = json_decode(self.request.body)
+            approval_data = data.get("approval_data") or data
+            filename = data.get("filename")
+            file_type = data.get("type", "sample")
+            if file_type == "upload" and filename:
+                src_path = os.path.join(UPLOADS_DIR, filename)
+            elif filename:
+                src_path = os.path.join(SAMPLES_DIR, filename)
+            else:
+                src_path = None
+            clean_name = data.get("original_filename") or approval_data.get("filename", "макет")
+
+        base_no_ext = os.path.splitext(clean_name)[0]
+        download_name = f"бланк_погодження_{base_no_ext}.pdf"
+
+        try:
+            pdf_bytes = generate_approval_pdf(
+                source_file_path=src_path,
+                data=approval_data,
+                output_pdf_path=None
+            )
+            self.set_header("Content-Type", "application/pdf")
+            ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
+            quoted_utf8 = urllib.parse.quote(download_name)
+            self.set_header("Content-Disposition", f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{quoted_utf8}')
+            self.write(pdf_bytes)
+        except Exception as e:
+            self.set_status(500)
+            self.write({"error": f"Approval sheet export failed: {str(e)}"})
+        finally:
+            if temp_file_to_clean and os.path.exists(temp_file_to_clean):
+                try:
+                    os.remove(temp_file_to_clean)
+                except Exception:
+                    pass
+
 class DownloadHandler(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         fname = os.path.basename(path)
@@ -247,6 +310,8 @@ def make_app():
         (r"/api/inspect", InspectHandler),
         (r"/api/calculate", CalculateHandler),
         (r"/api/export_pdf", ExportPdfHandler),
+        (r"/api/export_approval_sheet", ExportApprovalSheetHandler),
+        (r"/export_approval_sheet", ExportApprovalSheetHandler),
         (r"/download/(.*)", DownloadHandler, {"path": UPLOADS_DIR}),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": STATIC_DIR}),
     ], debug=False)
