@@ -72,7 +72,8 @@ def generate_approval_pdf(
     material_str = data.get("material", "білий глянцевий поліпропілен")
     glue_type = data.get("glue", "acrylic")
     applicator_type = data.get("application_type", "auto")
-    labels_per_roll_str = f"{data.get('labels_per_roll', '1000')} шт"
+    labels_per_roll_raw = str(data.get("labels_per_roll") or "").strip()
+    labels_per_roll_str = labels_per_roll_raw if (not labels_per_roll_raw or "шт" in labels_per_roll_raw or "мм" in labels_per_roll_raw) else f"{labels_per_roll_raw} шт"
     gap_str = data.get("gap", "4 мм (стандарт)")
     lanes_raw = str(data.get("lanes", "1 шт")).strip()
     lanes_str = lanes_raw if "шт" in lanes_raw else f"{lanes_raw} шт"

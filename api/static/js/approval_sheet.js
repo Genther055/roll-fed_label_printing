@@ -99,7 +99,7 @@ function openApprovalModal() {
   const currentAppMode = document.querySelector('input[name="appType"]:checked')?.value || 'auto';
   setRadio('approvalApplicator', currentAppMode === 'manual' ? 'manual' : 'auto');
 
-  setVal('approvalLabelsPerRoll', '1000');
+  setVal('approvalLabelsPerRoll', '');
   setVal('approvalGap', '4 мм (стандарт)');
   setVal('approvalLanes', '1 шт');
   setVal('approvalCore', '76');
@@ -190,7 +190,8 @@ function renderApprovalCanvas() {
   const matStr = getVal('approvalMaterial', 'білий глянцевий поліпропілен');
   const glueType = getRadio('approvalGlue', 'acrylic');
   const appType = getRadio('approvalApplicator', 'auto');
-  const labelsPerRoll = `${getVal('approvalLabelsPerRoll', '1000')} шт`;
+  const rawLpr = getVal('approvalLabelsPerRoll', '').trim();
+  const labelsPerRoll = rawLpr ? (rawLpr.includes('шт') || rawLpr.includes('мм') ? rawLpr : `${rawLpr} шт`) : '';
   const gapStr = getVal('approvalGap', '4 мм (стандарт)');
   const lanesStr = getVal('approvalLanes', '1 шт');
   const coreStr = `${getVal('approvalCore', '76')} мм`;
@@ -711,7 +712,7 @@ async function exportApprovalPdf() {
     material: getVal('approvalMaterial', 'білий глянцевий поліпропілен'),
     glue: getRadio('approvalGlue', 'acrylic'),
     application_type: getRadio('approvalApplicator', 'auto'),
-    labels_per_roll: getVal('approvalLabelsPerRoll', '1000'),
+    labels_per_roll: getVal('approvalLabelsPerRoll', ''),
     gap: getVal('approvalGap', '4 мм (стандарт)'),
     lanes: getVal('approvalLanes', '1 шт'),
     core: getVal('approvalCore', '76'),
