@@ -148,8 +148,8 @@ def generate_approval_pdf(
             l0_sz = _fit_font_size(fobj_bold, label_lines[0], lbl_max_w, start_size=10.5, min_size=8.0)
             l1_sz = _fit_font_size(fobj_bold, label_lines[1], lbl_max_w, start_size=10.5, min_size=8.0)
             l_sz = min(l0_sz, l1_sz)
-            page.insert_text(fitz.Point(sb_x0 + 6, y_center - 1.5), label_lines[0], fontname=fname_bold, fontsize=l_sz, color=c_dark)
-            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 9.0), label_lines[1], fontname=fname_bold, fontsize=l_sz, color=c_dark)
+            page.insert_text(fitz.Point(sb_x0 + 6, y_center - 2.2), label_lines[0], fontname=fname_bold, fontsize=l_sz, color=c_dark)
+            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 10.2), label_lines[1], fontname=fname_bold, fontsize=l_sz, color=c_dark)
 
         page.draw_rect(box_rect, color=c_dark, fill=c_white, width=1.0)
         if val:
@@ -157,71 +157,74 @@ def generate_approval_pdf(
             page.insert_text(fitz.Point(box_rect.x0 + 5, box_rect.y0 + box_h - 4.8), str(val), fontname=fname_bold, fontsize=fit_sz, color=val_color)
         return box_rect
 
-    draw_param_row("Тираж, шт", 86, val=circulation_str)
+    # Block 1: Print run, roll dimensions, material
+    draw_param_row("Тираж, шт", 84, val=circulation_str)
 
     # Вихід з рулону & Ніж
-    draw_param_row(["Вихід з рулону", "(ширина, мм)"], 110, box_w=84, val=exit_w_str)
-    page.insert_text(fitz.Point(732, 114), "НІЖ", fontname=fname_bold, fontsize=11.0, color=c_dark)
-    page.draw_rect(fitz.Rect(764, 101.5, 830, 118.5), color=c_dark, fill=c_white, width=1.0)
+    draw_param_row(["Вихід з рулону", "(ширина, мм)"], 111, box_w=84, val=exit_w_str)
+    page.insert_text(fitz.Point(732, 115), "НІЖ", fontname=fname_bold, fontsize=11.0, color=c_dark)
+    page.draw_rect(fitz.Rect(764, 102.5, 830, 119.5), color=c_dark, fill=c_white, width=1.0)
     if knife_str:
         k_sz = _fit_font_size(fobj_bold, knife_str, 56, start_size=10.0, min_size=6.0)
-        page.insert_text(fitz.Point(769, 114), knife_str, fontname=fname_bold, fontsize=k_sz, color=c_red_text)
+        page.insert_text(fitz.Point(769, 115), knife_str, fontname=fname_bold, fontsize=k_sz, color=c_red_text)
 
-    draw_param_row("Ширина, мм", 134, box_w=84, val=roll_w_str)
-    draw_param_row("Матеріал", 158, val=material_str, font_sz=9.8)
+    draw_param_row("Ширина, мм", 138, box_w=84, val=roll_w_str)
+    draw_param_row("Матеріал", 163, val=material_str, font_sz=9.8)
 
+    # Block 2: Glue & Applicator
     # Клей: Акрил + / Каучук
-    page.insert_text(fitz.Point(sb_x0 + 6, 184), "Клей", fontname=fname_bold, fontsize=11.5, color=c_dark)
-    page.insert_text(fitz.Point(638, 184), "Акрил", fontname=fname_bold, fontsize=10.0, color=c_dark)
-    b_akr = fitz.Rect(682, 176, 700, 192)
+    page.insert_text(fitz.Point(sb_x0 + 6, 196), "Клей", fontname=fname_bold, fontsize=11.5, color=c_dark)
+    page.insert_text(fitz.Point(638, 196), "Акрил", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_akr = fitz.Rect(682, 184, 700, 200)
     page.draw_rect(b_akr, color=c_dark, fill=c_white, width=1.0)
     if glue_type == "acrylic":
         page.insert_text(fitz.Point(b_akr.x0 + 4.5, b_akr.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
-    page.insert_text(fitz.Point(722, 184), "Каучук", fontname=fname_bold, fontsize=10.0, color=c_dark)
-    b_kauc = fitz.Rect(776, 176, 794, 192)
+    page.insert_text(fitz.Point(722, 196), "Каучук", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_kauc = fitz.Rect(776, 184, 794, 200)
     page.draw_rect(b_kauc, color=c_dark, fill=c_white, width=1.0)
     if glue_type == "rubber":
         page.insert_text(fitz.Point(b_kauc.x0 + 4.5, b_kauc.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
     # Поклейщик: Автм. + / Ручний
-    page.insert_text(fitz.Point(sb_x0 + 6, 208), "Поклейщик", fontname=fname_bold, fontsize=11.5, color=c_dark)
-    page.insert_text(fitz.Point(638, 208), "Автм.", fontname=fname_bold, fontsize=10.0, color=c_dark)
-    b_avt = fitz.Rect(682, 200, 700, 216)
+    page.insert_text(fitz.Point(sb_x0 + 6, 222), "Поклейщик", fontname=fname_bold, fontsize=11.5, color=c_dark)
+    page.insert_text(fitz.Point(638, 222), "Автм.", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_avt = fitz.Rect(682, 210, 700, 226)
     page.draw_rect(b_avt, color=c_dark, fill=c_white, width=1.0)
     if applicator_type == "auto":
         page.insert_text(fitz.Point(b_avt.x0 + 4.5, b_avt.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
-    page.insert_text(fitz.Point(722, 208), "Ручний", fontname=fname_bold, fontsize=10.0, color=c_dark)
-    b_ruch = fitz.Rect(776, 200, 794, 216)
+    page.insert_text(fitz.Point(722, 222), "Ручний", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_ruch = fitz.Rect(776, 210, 794, 226)
     page.draw_rect(b_ruch, color=c_dark, fill=c_white, width=1.0)
     if applicator_type == "manual":
         page.insert_text(fitz.Point(b_ruch.x0 + 4.5, b_ruch.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
-    draw_param_row(["К-сть. етикеток", "в рулоні, шт"], 232, val=labels_per_roll_str)
-    draw_param_row(["Відстань між", "етикетками,мм"], 256, val=gap_str, font_sz=10.0)
-    draw_param_row(["Кількість рядів", "в рулоні, шт"], 280, val=lanes_str)
-    draw_param_row("Втулка, мм", 304, val=core_str)
+    # Block 3: Winding & Roll Specs
+    draw_param_row(["К-сть. етикеток", "в рулоні, шт"], 249, val=labels_per_roll_str)
+    draw_param_row(["Відстань між", "етикетками,мм"], 279, val=gap_str, font_sz=10.0)
+    draw_param_row(["Кількість рядів", "в рулоні, шт"], 309, val=lanes_str)
+    draw_param_row("Втулка, мм", 336, val=core_str)
 
-    # Signature Fields
+    # Block 4: Signature Fields
     sig_fields = [
-        ("Менеджер:", manager_str, 332),
-        ("Дизайнер:", designer_str, 356),
-        ("Затвердив:", approved_str, 380),
-        ("Дата:", approval_date_str, 404),
+        ("Менеджер:", manager_str, 366),
+        ("Дизайнер:", designer_str, 391),
+        ("Затвердив:", approved_str, 416),
+        ("Дата:", approval_date_str, 441),
     ]
     for lbl, val, y in sig_fields:
         page.insert_text(fitz.Point(sb_x0 + 6, y + 4), lbl, fontname=fname_bold, fontsize=11.5, color=c_dark)
-        b_sig = fitz.Rect(638, y - 8, 830, y + 10)
+        b_sig = fitz.Rect(638, y - 9, 830, y + 9)
         page.draw_rect(b_sig, color=c_dark, fill=c_white, width=1.0)
         if val:
             s_sz = _fit_font_size(fobj_reg, val, b_sig.width - 10, start_size=9.5, min_size=6.5)
             page.insert_text(fitz.Point(b_sig.x0 + 6, b_sig.y0 + 13), val, fontname=fname_reg, fontsize=s_sz, color=c_dark)
 
-    # Yellow Attention Warning Box
-    warn_rect = fitz.Rect(sb_x0 + 10, 444, 830, 574)
+    # Block 5: Yellow Attention Warning Box
+    warn_rect = fitz.Rect(sb_x0 + 10, 466, 830, 584)
     page.draw_rect(warn_rect, color=c_red_border, fill=c_yellow, width=1.5)
-    page.insert_text(fitz.Point(warn_rect.x0 + 12, warn_rect.y0 + 19), "Будь ласка, будьте уважні!", fontname=fname_bold, fontsize=12.5, color=c_dark)
+    page.insert_text(fitz.Point(warn_rect.x0 + 12, warn_rect.y0 + 18), "Будь ласка, будьте уважні!", fontname=fname_bold, fontsize=12.5, color=c_dark)
 
     warn_lines = [
         "Після затвердження макета Замовник несе",
@@ -231,10 +234,10 @@ def generate_approval_pdf(
         "інформація, штрих-код, наявність та",
         "розташування знаків та елементів дизайну."
     ]
-    wy = warn_rect.y0 + 38
+    wy = warn_rect.y0 + 36
     for wl in warn_lines:
         page.insert_text(fitz.Point(warn_rect.x0 + 12, wy), wl, fontname=fname_reg, fontsize=10.0, color=c_dark)
-        wy += 14.5
+        wy += 14.0
 
     # =========================================================================
     # 4. MIDDLE STRIP: CMYK, PANTONE, BRANDING
