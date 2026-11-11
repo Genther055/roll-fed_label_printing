@@ -98,27 +98,28 @@ def generate_approval_pdf(
     page.draw_rect(fitz.Rect(0, 0, page_w, 44.8), color=None, fill=c_header_cyan)
 
     title_text = "ТЕХНІЧНЕ ЗАВДАННЯ НА ВИГОТОВЛЕННЯ ЕТИКЕТКИ ЦИФРОВИЙ РУЛОННИЙ ДРУК"
-    page.insert_text(fitz.Point(28, 28), title_text, fontname=fname_bold, fontsize=13.0, color=c_white)
+    title_sz = _fit_font_size(fobj_bold, title_text, 654, start_size=16.0, min_size=11.0)
+    page.insert_text(fitz.Point(14, 28), title_text, fontname=fname_bold, fontsize=title_sz, color=c_white)
 
-    page.insert_text(fitz.Point(672, 28), "ДАТА:", fontname=fname_bold, fontsize=13.0, color=c_white)
-    date_rect = fitz.Rect(722, 14, 822, 34)
+    page.insert_text(fitz.Point(676, 28), "ДАТА:", fontname=fname_bold, fontsize=13.0, color=c_white)
+    date_rect = fitz.Rect(728, 14, 830, 34)
     page.draw_rect(date_rect, color=c_dark, fill=c_white, width=1.0)
-    page.insert_text(fitz.Point(date_rect.x0 + 10, date_rect.y0 + 14), today_str, fontname=fname_bold, fontsize=11.5, color=c_dark)
+    page.insert_text(fitz.Point(date_rect.x0 + 11, date_rect.y0 + 14), today_str, fontname=fname_bold, fontsize=11.5, color=c_dark)
 
     # =========================================================================
     # 2. SUBHEADER (Filename + Cut Contour)
     # =========================================================================
-    sb_x0 = 542
+    sb_x0 = 524
     page.draw_rect(fitz.Rect(0, 44.8, sb_x0, 68), color=None, fill=c_light_cyan)
     page.insert_text(fitz.Point(14, 61), "Назва файлу", fontname=fname_bold, fontsize=11.5, color=c_dark)
 
-    fn_rect = fitz.Rect(108, 48, 354, 65)
+    fn_rect = fitz.Rect(108, 48, 342, 65)
     page.draw_rect(fn_rect, color=c_dark, fill=c_white, width=1.0)
     fn_sz = _fit_font_size(fobj_bold, filename_str, fn_rect.width - 10, start_size=9.5, min_size=5.0)
     page.insert_text(fitz.Point(fn_rect.x0 + 6, fn_rect.y0 + 12), filename_str, fontname=fname_bold, fontsize=fn_sz, color=c_dark)
 
     # Cut Contour Box (Yellow with Magenta Dashed Line)
-    cut_box = fitz.Rect(364, 48, 534, 65)
+    cut_box = fitz.Rect(350, 48, 516, 65)
     page.draw_rect(cut_box, color=c_magenta, fill=c_yellow, width=1.0)
     page.insert_text(fitz.Point(cut_box.x0 + 8, cut_box.y0 + 12), "Контур різу", fontname=fname_bold, fontsize=10.5, color=c_dark)
     page.draw_line(
@@ -130,20 +131,25 @@ def generate_approval_pdf(
     )
 
     # =========================================================================
-    # 3. RIGHT SIDEBAR (Shifted left for spacious 194pt white boxes)
+    # 3. RIGHT SIDEBAR (Shifted left for large labels and wide 192pt value boxes)
     # =========================================================================
     page.draw_rect(fitz.Rect(sb_x0, 44.8, page_w, page_h), color=None, fill=c_light_cyan)
 
-    def draw_param_row(label_lines, y_center, box_x0=628, box_w=194, box_h=17, val="", val_color=c_red_text, font_sz=10.5):
+    def draw_param_row(label_lines, y_center, box_x0=638, box_w=192, box_h=17, val="", val_color=c_red_text, font_sz=10.5):
         box_rect = fitz.Rect(box_x0, y_center - box_h / 2, box_x0 + box_w, y_center + box_h / 2)
         if isinstance(label_lines, str):
             label_lines = [label_lines]
 
+        lbl_max_w = box_x0 - (sb_x0 + 12)
         if len(label_lines) == 1:
-            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 4), label_lines[0], fontname=fname_bold, fontsize=9.0, color=c_dark)
+            l_sz = _fit_font_size(fobj_bold, label_lines[0], lbl_max_w, start_size=11.5, min_size=8.5)
+            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 4), label_lines[0], fontname=fname_bold, fontsize=l_sz, color=c_dark)
         else:
-            page.insert_text(fitz.Point(sb_x0 + 6, y_center - 1), label_lines[0], fontname=fname_bold, fontsize=8.0, color=c_dark)
-            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 8), label_lines[1], fontname=fname_bold, fontsize=8.0, color=c_dark)
+            l0_sz = _fit_font_size(fobj_bold, label_lines[0], lbl_max_w, start_size=10.5, min_size=8.0)
+            l1_sz = _fit_font_size(fobj_bold, label_lines[1], lbl_max_w, start_size=10.5, min_size=8.0)
+            l_sz = min(l0_sz, l1_sz)
+            page.insert_text(fitz.Point(sb_x0 + 6, y_center - 1.5), label_lines[0], fontname=fname_bold, fontsize=l_sz, color=c_dark)
+            page.insert_text(fitz.Point(sb_x0 + 6, y_center + 9.0), label_lines[1], fontname=fname_bold, fontsize=l_sz, color=c_dark)
 
         page.draw_rect(box_rect, color=c_dark, fill=c_white, width=1.0)
         if val:
@@ -154,40 +160,40 @@ def generate_approval_pdf(
     draw_param_row("Тираж, шт", 86, val=circulation_str)
 
     # Вихід з рулону & Ніж
-    draw_param_row(["Вихід з рулону", "(ширина, мм)"], 110, box_w=88, val=exit_w_str)
-    page.insert_text(fitz.Point(726, 114), "НІЖ", fontname=fname_bold, fontsize=10.5, color=c_dark)
-    page.draw_rect(fitz.Rect(756, 101.5, 822, 118.5), color=c_dark, fill=c_white, width=1.0)
+    draw_param_row(["Вихід з рулону", "(ширина, мм)"], 110, box_w=84, val=exit_w_str)
+    page.insert_text(fitz.Point(732, 114), "НІЖ", fontname=fname_bold, fontsize=11.0, color=c_dark)
+    page.draw_rect(fitz.Rect(764, 101.5, 830, 118.5), color=c_dark, fill=c_white, width=1.0)
     if knife_str:
         k_sz = _fit_font_size(fobj_bold, knife_str, 56, start_size=10.0, min_size=6.0)
-        page.insert_text(fitz.Point(761, 114), knife_str, fontname=fname_bold, fontsize=k_sz, color=c_red_text)
+        page.insert_text(fitz.Point(769, 114), knife_str, fontname=fname_bold, fontsize=k_sz, color=c_red_text)
 
-    draw_param_row("Ширина, мм", 134, box_w=88, val=roll_w_str)
+    draw_param_row("Ширина, мм", 134, box_w=84, val=roll_w_str)
     draw_param_row("Матеріал", 158, val=material_str, font_sz=9.8)
 
     # Клей: Акрил + / Каучук
-    page.insert_text(fitz.Point(sb_x0 + 6, 184), "Клей", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    page.insert_text(fitz.Point(628, 184), "Акрил", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    b_akr = fitz.Rect(674, 176, 692, 192)
+    page.insert_text(fitz.Point(sb_x0 + 6, 184), "Клей", fontname=fname_bold, fontsize=11.5, color=c_dark)
+    page.insert_text(fitz.Point(638, 184), "Акрил", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_akr = fitz.Rect(682, 176, 700, 192)
     page.draw_rect(b_akr, color=c_dark, fill=c_white, width=1.0)
     if glue_type == "acrylic":
         page.insert_text(fitz.Point(b_akr.x0 + 4.5, b_akr.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
-    page.insert_text(fitz.Point(716, 184), "Каучук", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    b_kauc = fitz.Rect(766, 176, 784, 192)
+    page.insert_text(fitz.Point(722, 184), "Каучук", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_kauc = fitz.Rect(776, 176, 794, 192)
     page.draw_rect(b_kauc, color=c_dark, fill=c_white, width=1.0)
     if glue_type == "rubber":
         page.insert_text(fitz.Point(b_kauc.x0 + 4.5, b_kauc.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
     # Поклейщик: Автм. + / Ручний
-    page.insert_text(fitz.Point(sb_x0 + 6, 208), "Поклейщик", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    page.insert_text(fitz.Point(628, 208), "Автм.", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    b_avt = fitz.Rect(674, 200, 692, 216)
+    page.insert_text(fitz.Point(sb_x0 + 6, 208), "Поклейщик", fontname=fname_bold, fontsize=11.5, color=c_dark)
+    page.insert_text(fitz.Point(638, 208), "Автм.", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_avt = fitz.Rect(682, 200, 700, 216)
     page.draw_rect(b_avt, color=c_dark, fill=c_white, width=1.0)
     if applicator_type == "auto":
         page.insert_text(fitz.Point(b_avt.x0 + 4.5, b_avt.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
 
-    page.insert_text(fitz.Point(716, 208), "Ручний", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    b_ruch = fitz.Rect(766, 200, 784, 216)
+    page.insert_text(fitz.Point(722, 208), "Ручний", fontname=fname_bold, fontsize=10.0, color=c_dark)
+    b_ruch = fitz.Rect(776, 200, 794, 216)
     page.draw_rect(b_ruch, color=c_dark, fill=c_white, width=1.0)
     if applicator_type == "manual":
         page.insert_text(fitz.Point(b_ruch.x0 + 4.5, b_ruch.y0 + 12), "+", fontname=fname_bold, fontsize=12.0, color=c_red_text)
@@ -205,17 +211,17 @@ def generate_approval_pdf(
         ("Дата:", approval_date_str, 404),
     ]
     for lbl, val, y in sig_fields:
-        page.insert_text(fitz.Point(sb_x0 + 8, y + 4), lbl, fontname=fname_bold, fontsize=9.5, color=c_dark)
-        b_sig = fitz.Rect(628, y - 8, 822, y + 10)
+        page.insert_text(fitz.Point(sb_x0 + 6, y + 4), lbl, fontname=fname_bold, fontsize=11.5, color=c_dark)
+        b_sig = fitz.Rect(638, y - 8, 830, y + 10)
         page.draw_rect(b_sig, color=c_dark, fill=c_white, width=1.0)
         if val:
             s_sz = _fit_font_size(fobj_reg, val, b_sig.width - 10, start_size=9.5, min_size=6.5)
             page.insert_text(fitz.Point(b_sig.x0 + 6, b_sig.y0 + 13), val, fontname=fname_reg, fontsize=s_sz, color=c_dark)
 
     # Yellow Attention Warning Box
-    warn_rect = fitz.Rect(sb_x0 + 10, 444, 822, 574)
+    warn_rect = fitz.Rect(sb_x0 + 10, 444, 830, 574)
     page.draw_rect(warn_rect, color=c_red_border, fill=c_yellow, width=1.5)
-    page.insert_text(fitz.Point(warn_rect.x0 + 10, warn_rect.y0 + 18), "Будь ласка, будьте уважні!", fontname=fname_bold, fontsize=12.0, color=c_dark)
+    page.insert_text(fitz.Point(warn_rect.x0 + 12, warn_rect.y0 + 19), "Будь ласка, будьте уважні!", fontname=fname_bold, fontsize=12.5, color=c_dark)
 
     warn_lines = [
         "Після затвердження макета Замовник несе",
@@ -225,9 +231,9 @@ def generate_approval_pdf(
         "інформація, штрих-код, наявність та",
         "розташування знаків та елементів дизайну."
     ]
-    wy = warn_rect.y0 + 36
+    wy = warn_rect.y0 + 38
     for wl in warn_lines:
-        page.insert_text(fitz.Point(warn_rect.x0 + 10, wy), wl, fontname=fname_reg, fontsize=9.5, color=c_dark)
+        page.insert_text(fitz.Point(warn_rect.x0 + 12, wy), wl, fontname=fname_reg, fontsize=10.0, color=c_dark)
         wy += 14.5
 
     # =========================================================================
@@ -243,21 +249,21 @@ def generate_approval_pdf(
         ("Y", (1.0, 0.949, 0.0), c_dark),
         ("K", (0.137, 0.122, 0.125), c_white)
     ]
-    cx = 24
+    cx = 16
     for letter, bg, fg in cmyk_defs:
-        sq = fitz.Rect(cx, mid_y0 + 4, cx + 24, mid_y1 - 4)
+        sq = fitz.Rect(cx, mid_y0 + 4, cx + 23, mid_y1 - 4)
         page.draw_rect(sq, color=c_dark, fill=bg, width=0.8)
         page.insert_text(fitz.Point(sq.x0 + 6, sq.y0 + 20), letter, fontname=fname_bold, fontsize=15.0, color=fg)
-        cx += 28
+        cx += 26
 
-    page.insert_text(fitz.Point(138, mid_y0 + 22), "Додаткові кольори (Pantone)", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    p_box = fitz.Rect(314, mid_y0 + 7, 386, mid_y1 - 7)
+    page.insert_text(fitz.Point(124, mid_y0 + 22), "Додаткові кольори (Pantone)", fontname=fname_bold, fontsize=9.5, color=c_dark)
+    p_box = fitz.Rect(294, mid_y0 + 7, 366, mid_y1 - 7)
     page.draw_rect(p_box, color=c_dark, fill=c_white, width=1.0)
     p_sz = _fit_font_size(fobj_bold, pantone_str, p_box.width - 10, start_size=9.0, min_size=6.5)
     page.insert_text(fitz.Point(p_box.x0 + 6, p_box.y0 + 14), pantone_str, fontname=fname_bold, fontsize=p_sz, color=c_dark)
 
-    page.insert_text(fitz.Point(398, mid_y0 + 22), "Без брендування", fontname=fname_bold, fontsize=9.5, color=c_dark)
-    nb_box = fitz.Rect(506, mid_y0 + 7, 526, mid_y1 - 7)
+    page.insert_text(fitz.Point(376, mid_y0 + 22), "Без брендування", fontname=fname_bold, fontsize=9.5, color=c_dark)
+    nb_box = fitz.Rect(482, mid_y0 + 7, 502, mid_y1 - 7)
     page.draw_rect(nb_box, color=c_dark, fill=c_white, width=1.0)
     if no_branding:
         page.insert_text(fitz.Point(nb_box.x0 + 4, nb_box.y0 + 15), "+", fontname=fname_bold, fontsize=13.0, color=c_red_text)
@@ -265,15 +271,15 @@ def generate_approval_pdf(
     # =========================================================================
     # 5. CENTRAL ARTWORK AREA (Top)
     # =========================================================================
-    d_sz = _fit_font_size(fobj_bold, dims_str, 185, start_size=21.0, min_size=14.0)
-    page.insert_text(fitz.Point(335, 115), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
+    d_sz = _fit_font_size(fobj_bold, dims_str, 198, start_size=21.0, min_size=14.0)
+    page.insert_text(fitz.Point(312, 115), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
 
     has_art = False
     art_aspect = label_w / label_h if label_h > 0 else 1.0
     art_path = source_file_path or preview_image_path
 
     if art_path and os.path.exists(art_path):
-        target_art_rect = fitz.Rect(42, 110, 315, 350)
+        target_art_rect = fitz.Rect(32, 110, 296, 350)
         try:
             if art_path.lower().endswith(".pdf"):
                 src_doc = fitz.open(art_path)
@@ -320,9 +326,9 @@ def generate_approval_pdf(
     # 6. BOTTOM UNWINDING SCHEME (Clean roll + web + undistorted labels)
     # =========================================================================
     # Roll Cylinder on Left
-    rx_c = 135
+    rx_c = 130
     ry_c = 445
-    r_major = 56
+    r_major = 54
     r_minor = 16
 
     # Roll Top Ellipse
@@ -354,7 +360,7 @@ def generate_approval_pdf(
     web_y0 = 472
     web_y1 = 562
     web_x0 = rx_c
-    web_x1 = 524
+    web_x1 = 506
     page.draw_rect(fitz.Rect(web_x0, web_y0, web_x1, web_y1), color=c_dark, fill=c_white, width=1.0)
 
     # Clean Red Arrow at Top of Web showing unwinding direction
