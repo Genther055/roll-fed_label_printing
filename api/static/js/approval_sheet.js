@@ -24,9 +24,36 @@ function initApprovalSheet() {
     });
   }
 
-  // ESC key to close
+  // Material combobox (select preset OR type custom value)
+  const matBtn = document.getElementById('btnMaterialDropdown');
+  const matMenu = document.getElementById('approvalMaterialMenu');
+  const matInput = document.getElementById('approvalMaterial');
+  if (matBtn && matMenu && matInput) {
+    matBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      matMenu.classList.toggle('hidden');
+    });
+    matMenu.querySelectorAll('.approval-mat-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        matInput.value = opt.dataset.val || opt.textContent.trim();
+        matMenu.classList.add('hidden');
+        renderApprovalCanvas();
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!matMenu.classList.contains('hidden') && !matMenu.contains(e.target) && e.target !== matBtn) {
+        matMenu.classList.add('hidden');
+      }
+    });
+  }
+
+  // ESC key to close menu or modal
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (matMenu && !matMenu.classList.contains('hidden')) {
+        matMenu.classList.add('hidden');
+        return;
+      }
       const m = document.getElementById('approvalModal');
       if (m && !m.classList.contains('hidden')) closeApprovalModal();
     }
@@ -85,6 +112,12 @@ function openApprovalModal() {
   setVal('approvalDesigner', localStorage.getItem('approval_designer') || '');
   setVal('approvalApprovedBy', '');
   setVal('approvalApprovalDate', '');
+
+  // Sync unwinding orientation from active layout (manual or auto FINAT)
+  const rawRot = currentLayout?.active?.rotation ?? currentLayout?.params?.chosen_rotation ?? 0;
+  const normRot = ((parseInt(rawRot, 10) || 0) % 360 + 360) % 360;
+  setVal('approvalRollRotation', String(normRot));
+  document.getElementById('approvalMaterialMenu')?.classList.add('hidden');
 
   // Pre-load image for canvas
   const imgUrl = currentPreviewUrl || (currentFile ? currentFile.preview_data_url : null);
@@ -168,7 +201,9 @@ function renderApprovalCanvas() {
   const pantoneStr = getVal('approvalPantone', 'відсутні');
   const noBrand = document.getElementById('approvalNoBranding')?.checked || false;
 
-  const windingScheme = currentLayout ? parseInt(currentLayout.active.winding_scheme || 1) : 1;
+  const rotEl = document.getElementById('approvalRollRotation');
+  const rawRot = rotEl ? rotEl.value : (currentLayout?.active?.rotation ?? currentLayout?.params?.chosen_rotation ?? 0);
+  const layoutRot = ((parseInt(rawRot, 10) || 0) % 360 + 360) % 360;
 
   // Colors
   const cHeaderCyan = '#00aeef';
@@ -594,9 +629,9 @@ function renderApprovalCanvas() {
   ctx.closePath();
   ctx.fill();
 
-  // Repeated Labels along web (undistorted aspect ratio, rotation-aware)
-  const rotMap = { 1: 0, 2: 180, 3: 90, 4: 270 };
-  const rotDeg = rotMap[windingScheme] || 0;
+  // Repeated Labels along horizontal unwinding web (undistorted aspect ratio, rotation-aware)
+  // Matches roll imposition convention: (layoutRot + 270) % 360 in PDF => (90 - layoutRot) % 360 CW on Canvas
+  const rotDeg = ((90 - layoutRot) % 360 + 360) % 360;
   const rotRad = (rotDeg * Math.PI) / 180;
   const isRot = rotDeg === 90 || rotDeg === 270;
 
@@ -621,7 +656,7 @@ function renderApprovalCanvas() {
   }
 
   let repeats = Math.floor((availWebW + gapBetween) / (visW + gapBetween));
-  repeats = Math.max(2, Math.min(4, repeats));
+  repeats = Math.max(2, Math.min(6, repeats));
 
   const ly0 = webY0 + (webH - visH) / 2.0;
   const startLx = webX0 + 18 * s;
@@ -686,7 +721,12 @@ async function exportApprovalPdf() {
     designer: getVal('approvalDesigner', ''),
     approved_by: getVal('approvalApprovedBy', ''),
     approval_date: getVal('approvalApprovalDate', ''),
-    winding_scheme: currentLayout ? parseInt(currentLayout.active.winding_scheme || 1) : 1
+    winding_scheme: currentLayout?.params?.winding_scheme ? parseInt(currentLayout.params.winding_scheme, 10) : 1,
+    roll_rotation: (() => {
+      const rotEl = document.getElementById('approvalRollRotation');
+      const raw = rotEl ? rotEl.value : (currentLayout?.active?.rotation ?? currentLayout?.params?.chosen_rotation ?? 0);
+      return ((parseInt(raw, 10) || 0) % 360 + 360) % 360;
+    })()
   };
 
   try {

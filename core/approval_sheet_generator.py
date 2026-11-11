@@ -85,6 +85,11 @@ def generate_approval_pdf(
     pantone_str = data.get("pantone", "відсутні")
     no_branding = bool(data.get("no_branding", False))
     winding_scheme = int(data.get("winding_scheme", 1))
+    rot_map = {1: 0, 2: 180, 3: 90, 4: 270}
+    if "roll_rotation" in data and data.get("roll_rotation") not in (None, ""):
+        layout_rot = int(float(data.get("roll_rotation"))) % 360
+    else:
+        layout_rot = rot_map.get(winding_scheme, 0)
 
     # =========================================================================
     # 1. TOP HEADER BANNER
@@ -359,10 +364,10 @@ def generate_approval_pdf(
         fitz.Point(web_x1 - 6, arr_y + 3)
     ], color=c_red_border, fill=c_red_border)
 
-    # Compute exact undistorted label size on the web accounting for rotation
-    rot_map = {1: 0, 2: 180, 3: 90, 4: 270}
-    scheme_rot = rot_map.get(winding_scheme, 0)
-    is_rot_90 = scheme_rot in (90, 270)
+    # Compute exact undistorted label size on the horizontal unwinding web
+    # Matches roll imposition convention: (layout_rot + 270) % 360
+    web_rot = (layout_rot + 270) % 360
+    is_rot_90 = web_rot in (90, 270)
     vis_aspect = (1.0 / art_aspect) if (is_rot_90 and art_aspect > 0) else art_aspect
 
     web_h = web_y1 - web_y0
@@ -381,9 +386,9 @@ def generate_approval_pdf(
         vis_w = max_two_w
         vis_h = vis_w / vis_aspect if vis_aspect > 0 else max_lbl_h
 
-    # Decide repeat count (2, 3, or 4)
+    # Decide repeat count (2 to 6)
     repeats = int((avail_web_w + gap_between) // (vis_w + gap_between))
-    repeats = max(2, min(4, repeats))
+    repeats = max(2, min(6, repeats))
 
     # Center labels vertically and horizontally on the web
     ly0 = web_y0 + (web_h - vis_h) / 2.0
@@ -398,10 +403,10 @@ def generate_approval_pdf(
             try:
                 if art_path.lower().endswith(".pdf"):
                     sdoc = fitz.open(art_path)
-                    page.show_pdf_page(l_rect, sdoc, 0, rotate=scheme_rot)
+                    page.show_pdf_page(l_rect, sdoc, 0, rotate=web_rot)
                     sdoc.close()
                 else:
-                    page.insert_image(l_rect, filename=art_path, rotate=scheme_rot)
+                    page.insert_image(l_rect, filename=art_path, rotate=web_rot)
             except Exception:
                 pass
         else:

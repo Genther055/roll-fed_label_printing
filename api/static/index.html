@@ -611,14 +611,20 @@
               <span class="w-1.5 h-1.5 bg-[#fff200] rounded-full"></span> 2. Матеріал та клей
             </div>
             <div class="space-y-1.5">
-              <div>
+              <div class="relative">
                 <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Матеріал основи</label>
-                <select id="approvalMaterial" class="cad-input w-full h-6.5 text-[11px] px-2 text-white bg-[#1a1a1a]">
-                  <option value="білий глянцевий поліпропілен">білий глянцевий поліпропілен</option>
-                  <option value="білий матовий поліпропілен">білий матовий поліпропілен</option>
-                  <option value="білий глянцевий крейдований папір">білий глянцевий крейдований папір</option>
-                  <option value="білий матовий крейдований папір">білий матовий крейдований папір</option>
-                </select>
+                <div class="relative flex items-center">
+                  <input type="text" id="approvalMaterial" class="cad-input w-full h-6.5 text-[11px] px-2 pr-6 text-white" value="білий глянцевий поліпропілен" placeholder="Оберіть або впишіть матеріал">
+                  <button type="button" id="btnMaterialDropdown" class="absolute right-0.5 top-0 bottom-0 px-1.5 text-[#969696] hover:text-white flex items-center justify-center" title="Обрати зі списку">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+                <div id="approvalMaterialMenu" class="hidden absolute left-0 right-0 top-full mt-0.5 z-50 bg-[#1e1e1e] border border-[#3a3a3a] rounded shadow-xl overflow-hidden">
+                  <button type="button" class="approval-mat-opt w-full text-left px-2 py-1.5 text-[11px] text-[#dedede] hover:bg-[#2a3749] hover:text-white block border-b border-[#2a2a2a]" data-val="білий глянцевий поліпропілен">білий глянцевий поліпропілен</button>
+                  <button type="button" class="approval-mat-opt w-full text-left px-2 py-1.5 text-[11px] text-[#dedede] hover:bg-[#2a3749] hover:text-white block border-b border-[#2a2a2a]" data-val="білий матовий поліпропілен">білий матовий поліпропілен</button>
+                  <button type="button" class="approval-mat-opt w-full text-left px-2 py-1.5 text-[11px] text-[#dedede] hover:bg-[#2a3749] hover:text-white block border-b border-[#2a2a2a]" data-val="білий глянцевий крейдований папір">білий глянцевий крейдований папір</button>
+                  <button type="button" class="approval-mat-opt w-full text-left px-2 py-1.5 text-[11px] text-[#dedede] hover:bg-[#2a3749] hover:text-white block" data-val="білий матовий крейдований папір">білий матовий крейдований папір</button>
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-2 pt-1">
@@ -698,6 +704,15 @@
                   <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ніж</label>
                   <input type="text" id="approvalKnife" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono" placeholder="—">
                 </div>
+              </div>
+              <div>
+                <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Напрямок на виході рулону</label>
+                <select id="approvalRollRotation" class="cad-input w-full h-6.5 text-[11px] px-2 text-white bg-[#1a1a1a]">
+                  <option value="0">0° — Книжкова / Схема №1 (Головою вперед)</option>
+                  <option value="90">90° — Альбомна / Схема №3 (Правим боком)</option>
+                  <option value="180">180° — Схема №2 (Ногами вперед)</option>
+                  <option value="270">270° — Схема №4 (Лівим боком)</option>
+                </select>
               </div>
             </div>
           </div>
