@@ -24,17 +24,6 @@ function initApprovalSheet() {
     });
   }
 
-  // Quick Material buttons
-  document.querySelectorAll('.btn-quick-mat').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const matInput = document.getElementById('approvalMaterial');
-      if (matInput) {
-        matInput.value = btn.dataset.mat || btn.innerText;
-        renderApprovalCanvas();
-      }
-    });
-  });
-
   // ESC key to close
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -73,7 +62,7 @@ function openApprovalModal() {
   setVal('approvalKnife', '');
   
   if (!document.getElementById('approvalMaterial').value) {
-    setVal('approvalMaterial', 'білий поліпропілен');
+    setVal('approvalMaterial', 'білий глянцевий поліпропілен');
   }
 
   // Glue radio
@@ -84,7 +73,7 @@ function openApprovalModal() {
   setRadio('approvalApplicator', currentAppMode === 'manual' ? 'manual' : 'auto');
 
   setVal('approvalLabelsPerRoll', '1000');
-  setVal('approvalGap', `${p.gap_x || 4} мм (стандарт)`);
+  setVal('approvalGap', '4 мм (стандарт)');
   setVal('approvalLanes', '1 шт');
   setVal('approvalCore', '76');
   setVal('approvalPantone', 'відсутні');
@@ -94,7 +83,7 @@ function openApprovalModal() {
 
   setVal('approvalManager', localStorage.getItem('approval_manager') || '');
   setVal('approvalDesigner', localStorage.getItem('approval_designer') || '');
-  setVal('approvalApprovedBy', 'Замовник');
+  setVal('approvalApprovedBy', '');
   setVal('approvalApprovalDate', '');
 
   // Pre-load image for canvas
@@ -165,7 +154,7 @@ function renderApprovalCanvas() {
   const rollWStr = `${getVal('approvalRollWidth', '330')} мм`;
   const exitWStr = getVal('approvalExitWidth', '');
   const knifeStr = getVal('approvalKnife', '');
-  const matStr = getVal('approvalMaterial', 'білий поліпропілен');
+  const matStr = getVal('approvalMaterial', 'білий глянцевий поліпропілен');
   const glueType = getRadio('approvalGlue', 'acrylic');
   const appType = getRadio('approvalApplicator', 'auto');
   const labelsPerRoll = `${getVal('approvalLabelsPerRoll', '1000')} шт`;
@@ -216,27 +205,35 @@ function renderApprovalCanvas() {
   ctx.fillStyle = cLightCyan;
   ctx.fillRect(0, 44.8 * s, 590 * s, 23.2 * s);
 
+  function drawFittedText(text, x, y, maxW, startPt, minPt = 4.5, isBold = true) {
+    let sz = startPt;
+    while (sz > minPt) {
+      ctx.font = `${isBold ? 'bold ' : ''}${sz * s}px sans-serif`;
+      if (ctx.measureText(String(text)).width <= maxW) break;
+      sz -= 0.25;
+    }
+    ctx.font = `${isBold ? 'bold ' : ''}${Math.max(sz, minPt) * s}px sans-serif`;
+    ctx.fillText(String(text), x, y);
+  }
+
   ctx.fillStyle = cDark;
   ctx.font = `bold ${12.0 * s}px sans-serif`;
   ctx.fillText('Назва файлу', 28 * s, 56.4 * s);
 
   // Filename box
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(118 * s, 48 * s, 268 * s, 17 * s);
-  ctx.strokeRect(118 * s, 48 * s, 268 * s, 17 * s);
+  ctx.fillRect(122 * s, 48 * s, 263 * s, 17 * s);
+  ctx.strokeRect(122 * s, 48 * s, 263 * s, 17 * s);
 
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${9.0 * s}px sans-serif`;
-  const maxChars = 40;
-  const dispName = fileName.length > maxChars ? fileName.slice(0, maxChars) + '...' : fileName;
-  ctx.fillText(dispName, 124 * s, 57 * s);
+  drawFittedText(fileName, 128 * s, 57 * s, 253 * s, 9.5, 5.0, true);
 
   // Cut contour yellow box
   ctx.fillStyle = cYellow;
-  ctx.fillRect(398 * s, 48 * s, 184 * s, 17 * s);
+  ctx.fillRect(398 * s, 48 * s, 182 * s, 17 * s);
   ctx.strokeStyle = cMagenta;
   ctx.lineWidth = 1.0 * s;
-  ctx.strokeRect(398 * s, 48 * s, 184 * s, 17 * s);
+  ctx.strokeRect(398 * s, 48 * s, 182 * s, 17 * s);
 
   ctx.fillStyle = cDark;
   ctx.font = `bold ${10.5 * s}px sans-serif`;
@@ -247,7 +244,7 @@ function renderApprovalCanvas() {
   ctx.lineWidth = 2.0 * s;
   ctx.setLineDash([4 * s, 3 * s]);
   ctx.beginPath();
-  ctx.moveTo(482 * s, 56.5 * s);
+  ctx.moveTo(484 * s, 56.5 * s);
   ctx.lineTo(574 * s, 56.5 * s);
   ctx.stroke();
   ctx.setLineDash([]);
@@ -257,14 +254,14 @@ function renderApprovalCanvas() {
   ctx.fillStyle = cLightCyan;
   ctx.fillRect(sbX0, 44.8 * s, W - sbX0, H - 44.8 * s);
 
-  function drawParamRow(labelLines, yCenter, boxX0 = 688, boxW = 125, boxH = 16, val = '', valColor = cRedText, fontSz = 11.0) {
+  function drawParamRow(labelLines, yCenter, boxX0 = 692, boxW = 125, boxH = 16, val = '', valColor = cRedText, fontSz = 10.5) {
     const lines = Array.isArray(labelLines) ? labelLines : [labelLines];
     ctx.fillStyle = cDark;
     if (lines.length === 1) {
-      ctx.font = `bold ${9.5 * s}px sans-serif`;
+      ctx.font = `bold ${9.0 * s}px sans-serif`;
       ctx.fillText(lines[0], sbX0 + 6 * s, yCenter * s);
     } else {
-      ctx.font = `bold ${8.5 * s}px sans-serif`;
+      ctx.font = `bold ${8.0 * s}px sans-serif`;
       ctx.fillText(lines[0], sbX0 + 6 * s, (yCenter - 5) * s);
       ctx.fillText(lines[1], sbX0 + 6 * s, (yCenter + 5) * s);
     }
@@ -282,87 +279,85 @@ function renderApprovalCanvas() {
 
     if (val) {
       ctx.fillStyle = valColor;
-      ctx.font = `bold ${fontSz * s}px sans-serif`;
-      ctx.fillText(String(val), bx + 6 * s, yCenter * s);
+      drawFittedText(val, bx + 5 * s, yCenter * s, bw - 10 * s, fontSz, 4.5, true);
     }
   }
 
-  drawParamRow('Тираж, шт', 86, 688, 125, 16, circStr);
-  drawParamRow(['Вихід з рулону', '(ширина, мм)'], 110, 688, 58, 16, exitWStr);
+  drawParamRow('Тираж, шт', 86, 692, 125, 16, circStr);
+  drawParamRow(['Вихід з рулону', '(ширина, мм)'], 110, 692, 56, 16, exitWStr);
   
   ctx.fillStyle = cDark;
   ctx.font = `bold ${10.5 * s}px sans-serif`;
   ctx.fillText('НІЖ', 755 * s, 110 * s);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(785 * s, 102 * s, 28 * s, 16 * s);
-  ctx.strokeRect(785 * s, 102 * s, 28 * s, 16 * s);
+  ctx.fillRect(785 * s, 102 * s, 32 * s, 16 * s);
+  ctx.strokeRect(785 * s, 102 * s, 32 * s, 16 * s);
   if (knifeStr) {
     ctx.fillStyle = cRedText;
-    ctx.font = `bold ${9.5 * s}px sans-serif`;
-    ctx.fillText(knifeStr, 788 * s, 110 * s);
+    drawFittedText(knifeStr, 788 * s, 110 * s, 26 * s, 9.5, 5.5, true);
   }
 
-  drawParamRow('Ширина, мм', 134, 688, 65, 16, rollWStr);
-  drawParamRow('Матеріал', 158, 688, 125, 16, matStr, cRedText, 9.5);
+  drawParamRow('Ширина, мм', 134, 692, 65, 16, rollWStr);
+  drawParamRow('Матеріал', 158, 692, 125, 16, matStr, cRedText, 9.0);
 
   // Клей: Акрил + / Каучук
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${10.0 * s}px sans-serif`;
-  ctx.fillText('Клей', sbX0 + 8 * s, 184 * s);
   ctx.font = `bold ${9.5 * s}px sans-serif`;
+  ctx.fillText('Клей', sbX0 + 6 * s, 184 * s);
+  ctx.font = `bold ${9.0 * s}px sans-serif`;
   ctx.fillText('Акрил', 692 * s, 184 * s);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(728 * s, 176 * s, 17 * s, 16 * s);
-  ctx.strokeRect(728 * s, 176 * s, 17 * s, 16 * s);
+  ctx.fillRect(730 * s, 176 * s, 17 * s, 16 * s);
+  ctx.strokeRect(730 * s, 176 * s, 17 * s, 16 * s);
   if (glueType === 'acrylic') {
     ctx.fillStyle = cRedText;
     ctx.font = `bold ${12.0 * s}px sans-serif`;
-    ctx.fillText('+', 732 * s, 184 * s);
+    ctx.fillText('+', 734 * s, 184 * s);
   }
 
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${9.5 * s}px sans-serif`;
+  ctx.font = `bold ${9.0 * s}px sans-serif`;
   ctx.fillText('Каучук', 756 * s, 184 * s);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(796 * s, 176 * s, 17 * s, 16 * s);
-  ctx.strokeRect(796 * s, 176 * s, 17 * s, 16 * s);
+  ctx.fillRect(800 * s, 176 * s, 17 * s, 16 * s);
+  ctx.strokeRect(800 * s, 176 * s, 17 * s, 16 * s);
   if (glueType === 'rubber') {
     ctx.fillStyle = cRedText;
     ctx.font = `bold ${12.0 * s}px sans-serif`;
-    ctx.fillText('+', 800 * s, 184 * s);
+    ctx.fillText('+', 804 * s, 184 * s);
   }
 
   // Поклейщик: Автм. + / Ручний
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${10.0 * s}px sans-serif`;
-  ctx.fillText('Поклейщик', sbX0 + 8 * s, 208 * s);
   ctx.font = `bold ${9.5 * s}px sans-serif`;
+  ctx.fillText('Поклейщик', sbX0 + 6 * s, 208 * s);
+  ctx.font = `bold ${9.0 * s}px sans-serif`;
   ctx.fillText('Автм.', 692 * s, 208 * s);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(728 * s, 200 * s, 17 * s, 16 * s);
-  ctx.strokeRect(728 * s, 200 * s, 17 * s, 16 * s);
+  ctx.fillRect(730 * s, 200 * s, 17 * s, 16 * s);
+  ctx.strokeRect(730 * s, 200 * s, 17 * s, 16 * s);
   if (appType === 'auto') {
     ctx.fillStyle = cRedText;
     ctx.font = `bold ${12.0 * s}px sans-serif`;
-    ctx.fillText('+', 732 * s, 208 * s);
+    ctx.fillText('+', 734 * s, 208 * s);
   }
 
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${9.5 * s}px sans-serif`;
+  ctx.font = `bold ${9.0 * s}px sans-serif`;
   ctx.fillText('Ручний', 756 * s, 208 * s);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(796 * s, 200 * s, 17 * s, 16 * s);
-  ctx.strokeRect(796 * s, 200 * s, 17 * s, 16 * s);
+  ctx.fillRect(800 * s, 200 * s, 17 * s, 16 * s);
+  ctx.strokeRect(800 * s, 200 * s, 17 * s, 16 * s);
   if (appType === 'manual') {
     ctx.fillStyle = cRedText;
     ctx.font = `bold ${12.0 * s}px sans-serif`;
-    ctx.fillText('+', 800 * s, 208 * s);
+    ctx.fillText('+', 804 * s, 208 * s);
   }
 
-  drawParamRow(['К-сть. етикеток', 'в рулоні, шт'], 232, 688, 125, 16, labelsPerRoll);
-  drawParamRow(['Відстань між', 'етикетками,мм'], 256, 688, 125, 16, gapStr, cRedText, 9.5);
-  drawParamRow(['Кількість рядів', 'в рулоні, шт'], 280, 688, 125, 16, lanesStr);
-  drawParamRow('Втулка, мм', 304, 688, 125, 16, coreStr);
+  drawParamRow(['К-сть. етикеток', 'в рулоні, шт'], 232, 692, 125, 16, labelsPerRoll);
+  drawParamRow(['Відстань між', 'етикетками,мм'], 256, 692, 125, 16, gapStr, cRedText, 9.5);
+  drawParamRow(['Кількість рядів', 'в рулоні, шт'], 280, 692, 125, 16, lanesStr);
+  drawParamRow('Втулка, мм', 304, 692, 125, 16, coreStr);
 
   // Signatures
   const sigs = [
@@ -374,23 +369,22 @@ function renderApprovalCanvas() {
   sigs.forEach(([lbl, val, y]) => {
     ctx.fillStyle = cDark;
     ctx.font = `bold ${9.5 * s}px sans-serif`;
-    ctx.fillText(lbl, sbX0 + 12 * s, y * s);
+    ctx.fillText(lbl, sbX0 + 10 * s, y * s);
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(688 * s, (y - 8) * s, 125 * s, 16 * s);
-    ctx.strokeRect(688 * s, (y - 8) * s, 125 * s, 16 * s);
+    ctx.fillRect(692 * s, (y - 8) * s, 125 * s, 18 * s);
+    ctx.strokeRect(692 * s, (y - 8) * s, 125 * s, 18 * s);
 
     if (val) {
       ctx.fillStyle = cDark;
-      ctx.font = `${9.0 * s}px sans-serif`;
-      ctx.fillText(val, 694 * s, y * s);
+      drawFittedText(val, 698 * s, (y + 1) * s, 115 * s, 9.0, 5.5, false);
     }
   });
 
   // Warning Box
   const wx = sbX0 + 10 * s;
   const wy = 444 * s;
-  const ww = 215 * s;
+  const ww = 217 * s;
   const wh = 130 * s;
 
   ctx.fillStyle = cYellow;
@@ -454,21 +448,20 @@ function renderApprovalCanvas() {
   ctx.fillRect(348 * s, midY0 + 7 * s, 80 * s, midH - 14 * s);
   ctx.strokeRect(348 * s, midY0 + 7 * s, 80 * s, midH - 14 * s);
   ctx.fillStyle = cDark;
-  ctx.font = `bold ${9.0 * s}px sans-serif`;
-  ctx.fillText(pantoneStr, 354 * s, midY0 + 17 * s);
+  drawFittedText(pantoneStr, 354 * s, midY0 + 17 * s, 70 * s, 9.0, 5.5, true);
 
   // Без брендування
   ctx.fillStyle = cDark;
   ctx.font = `bold ${10.0 * s}px sans-serif`;
-  ctx.fillText('Без брендування', 448 * s, midY0 + 17 * s);
+  ctx.fillText('Без брендування', 442 * s, midY0 + 17 * s);
 
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(545 * s, midY0 + 7 * s, 20 * s, midH - 14 * s);
-  ctx.strokeRect(545 * s, midY0 + 7 * s, 20 * s, midH - 14 * s);
+  ctx.fillRect(552 * s, midY0 + 7 * s, 20 * s, midH - 14 * s);
+  ctx.strokeRect(552 * s, midY0 + 7 * s, 20 * s, midH - 14 * s);
   if (noBrand) {
     ctx.fillStyle = cRedText;
     ctx.font = `bold ${13.0 * s}px sans-serif`;
-    ctx.fillText('+', 549 * s, midY0 + 17 * s);
+    ctx.fillText('+', 556 * s, midY0 + 17 * s);
   }
 
   // 5. CENTRAL ARTWORK AREA
@@ -518,16 +511,7 @@ function renderApprovalCanvas() {
     ctx.fillText('МАКЕТ ЕТИКЕТКИ', artTargetBox.x + 65 * s, artTargetBox.y + 110 * s);
   }
 
-  // 6. BOTTOM UNWINDING SCHEME
-  const uY = 415 * s;
-  ctx.fillStyle = cDark;
-  ctx.font = `bold ${11.0 * s}px sans-serif`;
-  ctx.fillText('напрямок розмотування', 210 * s, (415 + 16) * s);
-
-  ctx.fillStyle = cRedText;
-  ctx.font = `bold ${9.0 * s}px sans-serif`;
-  ctx.fillText('Увага! Перевірте схему намотки!', 200 * s, (415 + 29) * s);
-
+  // 6. BOTTOM UNWINDING SCHEME (Clean roll + web + undistorted labels)
   // Roll Cylinder on left
   const rxC = 150 * s;
   const ryC = 445 * s;
@@ -567,7 +551,7 @@ function renderApprovalCanvas() {
 
   ctx.fillStyle = cDark;
   ctx.font = `bold ${8.0 * s}px sans-serif`;
-  ctx.fillText(coreStr, rxC - 8 * s, ryC - 20 * s);
+  ctx.fillText(coreStr, rxC - 10 * s, ryC - 22 * s);
 
   // Cylinder Side Lines
   ctx.strokeStyle = cDark;
@@ -584,16 +568,16 @@ function renderApprovalCanvas() {
 
   // Paper Web extending right
   const webX0 = rxC;
-  const webX1 = 515 * s;
-  const webY0 = 475 * s;
-  const webY1 = 560 * s;
+  const webX1 = 540 * s;
+  const webY0 = 472 * s;
+  const webY1 = 562 * s;
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(webX0, webY0, webX1 - webX0, webY1 - webY0);
   ctx.strokeRect(webX0, webY0, webX1 - webX0, webY1 - webY0);
 
-  // Red Arrow along web top
-  const arrY = webY0 - 8 * s;
+  // Clean Red Arrow along web top (unwinding direction)
+  const arrY = webY0 - 9 * s;
   ctx.strokeStyle = cRedBorder;
   ctx.fillStyle = cRedBorder;
   ctx.lineWidth = 1.5 * s;
@@ -610,89 +594,65 @@ function renderApprovalCanvas() {
   ctx.closePath();
   ctx.fill();
 
-  // Repeated Labels along web
+  // Repeated Labels along web (undistorted aspect ratio, rotation-aware)
   const rotMap = { 1: 0, 2: 180, 3: 90, 4: 270 };
   const rotDeg = rotMap[windingScheme] || 0;
   const rotRad = (rotDeg * Math.PI) / 180;
+  const isRot = rotDeg === 90 || rotDeg === 270;
 
-  const lblW = 120 * s;
-  const lblH = 75 * s;
+  const hasLoadedImg = approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0;
+  const artAspect = hasLoadedImg
+    ? (approvalLabelImage.naturalWidth / approvalLabelImage.naturalHeight)
+    : (labelH > 0 ? labelW / labelH : 1.0);
+  const visAspect = (isRot && artAspect > 0) ? (1.0 / artAspect) : artAspect;
 
-  for (let i = 0; i < 2; i++) {
-    const lx0 = webX0 + 20 * s + i * (lblW + 20 * s);
-    const ly0 = webY0 + 5 * s;
+  const webH = webY1 - webY0;
+  const padY = 7 * s;
+  const maxLblH = webH - 2 * padY;
+  const gapBetween = 14 * s;
+  const availWebW = (webX1 - webX0) - 36 * s;
 
+  let visH = maxLblH;
+  let visW = visH * visAspect;
+  const maxTwoW = (availWebW - gapBetween) / 2.0;
+  if (visW > maxTwoW) {
+    visW = maxTwoW;
+    visH = visAspect > 0 ? (visW / visAspect) : maxLblH;
+  }
+
+  let repeats = Math.floor((availWebW + gapBetween) / (visW + gapBetween));
+  repeats = Math.max(2, Math.min(4, repeats));
+
+  const ly0 = webY0 + (webH - visH) / 2.0;
+  const startLx = webX0 + 18 * s;
+
+  for (let i = 0; i < repeats; i++) {
+    const lx0 = startLx + i * (visW + gapBetween);
+
+    ctx.fillStyle = '#fcfcff';
+    ctx.fillRect(lx0, ly0, visW, visH);
     ctx.strokeStyle = cMagenta;
     ctx.lineWidth = 0.8 * s;
     ctx.setLineDash([3 * s, 2 * s]);
-    ctx.strokeRect(lx0, ly0, lblW, lblH);
+    ctx.strokeRect(lx0, ly0, visW, visH);
     ctx.setLineDash([]);
 
-    if (approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0) {
+    if (hasLoadedImg) {
       ctx.save();
-      ctx.translate(lx0 + lblW / 2, ly0 + lblH / 2);
+      ctx.translate(lx0 + visW / 2, ly0 + visH / 2);
       ctx.rotate(rotRad);
 
-      const isRot = rotDeg === 90 || rotDeg === 270;
-      const targetW = isRot ? lblH : lblW;
-      const targetH = isRot ? lblW : lblH;
+      const targetW = isRot ? visH : visW;
+      const targetH = isRot ? visW : visH;
 
       ctx.drawImage(approvalLabelImage, -targetW / 2, -targetH / 2, targetW, targetH);
       ctx.restore();
     } else {
       ctx.fillStyle = '#888888';
       ctx.font = `bold ${8.0 * s}px sans-serif`;
-      ctx.fillText(`ЕТИКЕТКА ${i + 1}`, lx0 + 30 * s, ly0 + 40 * s);
+      ctx.fillText(`ЕТИКЕТКА ${i + 1}`, lx0 + 8 * s, ly0 + visH / 2);
     }
   }
-
-  // Gap callout
-  const gapX0 = webX0 + 20 * s + lblW + 2 * s;
-  ctx.strokeStyle = cRedBorder;
-  ctx.lineWidth = 0.8 * s;
-  ctx.beginPath();
-  ctx.moveTo(gapX0, webY0 - 2 * s);
-  ctx.lineTo(gapX0 + 16 * s, webY0 - 2 * s);
-  ctx.stroke();
-
-  ctx.fillStyle = cDark;
-  ctx.font = `bold ${7.0 * s}px sans-serif`;
-  ctx.fillText('2мм', gapX0 + 1 * s, webY0 - 4 * s);
-
-  // Height Callout Arrow on right of web
-  const hX = webX1 + 12 * s;
-  ctx.strokeStyle = cRedBorder;
-  ctx.fillStyle = cRedBorder;
-  ctx.lineWidth = 1.0 * s;
-  ctx.beginPath();
-  ctx.moveTo(hX, webY0);
-  ctx.lineTo(hX, webY1);
-  ctx.stroke();
-
-  // Top arrow head
-  ctx.beginPath();
-  ctx.moveTo(hX, webY0);
-  ctx.lineTo(hX - 3 * s, webY0 + 6 * s);
-  ctx.lineTo(hX + 3 * s, webY0 + 6 * s);
-  ctx.closePath();
-  ctx.fill();
-
-  // Bottom arrow head
-  ctx.beginPath();
-  ctx.moveTo(hX, webY1);
-  ctx.lineTo(hX - 3 * s, webY1 - 6 * s);
-  ctx.lineTo(hX + 3 * s, webY1 - 6 * s);
-  ctx.closePath();
-  ctx.fill();
-
-  // Rotated Height Text
-  ctx.save();
-  ctx.translate(hX + 14 * s, (webY0 + webY1) / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = cDark;
-  ctx.font = `bold ${10.0 * s}px sans-serif`;
-  ctx.fillText(`Висота ${Math.round(labelH + 8)}мм`, -25 * s, 0);
-  ctx.restore();
 }
 
 // =============================================================================
@@ -713,7 +673,7 @@ async function exportApprovalPdf() {
     roll_width: getVal('approvalRollWidth', '330'),
     exit_width: getVal('approvalExitWidth', ''),
     knife: getVal('approvalKnife', ''),
-    material: getVal('approvalMaterial', 'білий поліпропілен'),
+    material: getVal('approvalMaterial', 'білий глянцевий поліпропілен'),
     glue: getRadio('approvalGlue', 'acrylic'),
     application_type: getRadio('approvalApplicator', 'auto'),
     labels_per_roll: getVal('approvalLabelsPerRoll', '1000'),

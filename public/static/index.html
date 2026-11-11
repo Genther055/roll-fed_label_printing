@@ -613,13 +613,12 @@
             <div class="space-y-1.5">
               <div>
                 <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Матеріал основи</label>
-                <input type="text" id="approvalMaterial" class="cad-input w-full h-6.5 text-[11px] px-2 text-white" value="білий поліпропілен">
-                <div class="flex flex-wrap gap-1 mt-1">
-                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="білий поліпропілен">Білий ПП</button>
-                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="самоклеючий папір">Папір напівгл.</button>
-                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="прозорий поліпропілен">Прозорий ПП</button>
-                  <button type="button" class="btn-quick-mat text-[9px] px-1.5 py-0.5 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded border border-[#383838] text-[#cccccc]" data-mat="металізований поліпропілен">Металізований</button>
-                </div>
+                <select id="approvalMaterial" class="cad-input w-full h-6.5 text-[11px] px-2 text-white bg-[#1a1a1a]">
+                  <option value="білий глянцевий поліпропілен">білий глянцевий поліпропілен</option>
+                  <option value="білий матовий поліпропілен">білий матовий поліпропілен</option>
+                  <option value="білий глянцевий крейдований папір">білий глянцевий крейдований папір</option>
+                  <option value="білий матовий крейдований папір">білий матовий крейдований папір</option>
+                </select>
               </div>
 
               <div class="grid grid-cols-2 gap-2 pt-1">
@@ -739,7 +738,7 @@
               <div class="grid grid-cols-2 gap-1.5">
                 <div>
                   <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Затвердив (Замовник)</label>
-                  <input type="text" id="approvalApprovedBy" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" value="Замовник">
+                  <input type="text" id="approvalApprovedBy" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-sans" value="" placeholder="Замовник">
                 </div>
                 <div>
                   <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Дата затвердження</label>
