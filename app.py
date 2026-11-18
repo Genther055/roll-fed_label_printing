@@ -140,6 +140,7 @@ class CalculateHandler(BaseHandler):
         app_type = data.get("application_type", "manual")
         orient_mode = data.get("orientation_mode", "auto_max")
         winding_scheme = int(data.get("winding_scheme", 1))
+        shape = data.get("shape", "rect")
 
         layout = calculate_layout(
             label_width=label_w,
@@ -152,7 +153,8 @@ class CalculateHandler(BaseHandler):
             gap_y=gap_y,
             application_type=app_type,
             orientation_mode=orient_mode,
-            winding_scheme=winding_scheme
+            winding_scheme=winding_scheme,
+            shape=shape
         )
 
         self.write({
@@ -193,7 +195,11 @@ class ExportPdfHandler(BaseHandler):
         else:
             w = int(layout.get("params", {}).get("label_width", 50))
             h = int(layout.get("params", {}).get("label_height", 80))
-            clean_name = f"спуск_висічки_{w}x{h}мм"
+            shape = layout.get("params", {}).get("shape", "rect")
+            if shape in ("circle", "round"):
+                clean_name = f"спуск_висічки_Ø{w}мм"
+            else:
+                clean_name = f"спуск_висічки_{w}x{h}мм"
 
         base_no_ext = os.path.splitext(clean_name)[0]
         # Downloaded file name: exact file name with .pdf extension

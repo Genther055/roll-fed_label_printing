@@ -376,6 +376,18 @@ class RollCanvas {
         renderH = pos.width;
       }
 
+      const isCircle = (this.layout?.params?.shape === 'circle');
+
+      // Thin dashed bounding box for circular label ("ті квадратики візуально просто залиш тонесечким пунктиром")
+      if (isCircle) {
+        ctx.save();
+        ctx.strokeStyle = '#555555';
+        ctx.lineWidth = 0.5 / this.scale;
+        ctx.setLineDash([2.5 / this.scale, 2.0 / this.scale]);
+        ctx.strokeRect(renderX, renderY, renderW, renderH);
+        ctx.restore();
+      }
+
       // Draw label image centered at (cx, cy)
       ctx.save();
       const cx = renderX + renderW / 2;
@@ -392,23 +404,50 @@ class RollCanvas {
       const drawW = (finalRotation % 180 === 0) ? renderW : renderH;
       const drawH = (finalRotation % 180 === 0) ? renderH : renderW;
 
-      if (this.previewImg && this.previewImg.complete) {
-        ctx.drawImage(this.previewImg, -drawW / 2, -drawH / 2, drawW, drawH);
-      } else {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-drawW / 2, -drawH / 2, drawW, drawH);
-        // Technical die-cut label blank with centered size
-        if (drawW >= 10 && drawH >= 8) {
+      if (isCircle) {
+        if (this.previewImg && this.previewImg.complete) {
           ctx.save();
-          ctx.fillStyle = '#64748b';
-          const fontPx = Math.min(drawW * 0.22, drawH * 0.22, 5.0);
-          ctx.font = `600 ${fontPx}px JetBrains Mono, monospace`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const origW = this.layout.params.label_width;
-          const origH = this.layout.params.label_height;
-          ctx.fillText(`${origW}×${origH}`, 0, 0);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(this.previewImg, -drawW / 2, -drawH / 2, drawW, drawH);
           ctx.restore();
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          if (drawW >= 8 && drawH >= 8) {
+            ctx.save();
+            ctx.fillStyle = '#64748b';
+            const fontPx = Math.min(drawW * 0.22, drawH * 0.22, 5.0);
+            ctx.font = `600 ${fontPx}px JetBrains Mono, monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const origW = this.layout.params.label_width;
+            ctx.fillText(`Ø${origW}`, 0, 0);
+            ctx.restore();
+          }
+        }
+      } else {
+        if (this.previewImg && this.previewImg.complete) {
+          ctx.drawImage(this.previewImg, -drawW / 2, -drawH / 2, drawW, drawH);
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-drawW / 2, -drawH / 2, drawW, drawH);
+          // Technical die-cut label blank with centered size
+          if (drawW >= 10 && drawH >= 8) {
+            ctx.save();
+            ctx.fillStyle = '#64748b';
+            const fontPx = Math.min(drawW * 0.22, drawH * 0.22, 5.0);
+            ctx.font = `600 ${fontPx}px JetBrains Mono, monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const origW = this.layout.params.label_width;
+            const origH = this.layout.params.label_height;
+            ctx.fillText(`${origW}×${origH}`, 0, 0);
+            ctx.restore();
+          }
         }
       }
       ctx.restore();
@@ -417,16 +456,32 @@ class RollCanvas {
       if (this.showCutContour) {
         ctx.strokeStyle = '#ec4899';
         ctx.lineWidth = 0.8 / this.scale;
-        ctx.strokeRect(renderX, renderY, renderW, renderH);
+        if (isCircle) {
+          ctx.beginPath();
+          ctx.ellipse(renderX + renderW / 2, renderY + renderH / 2, renderW / 2, renderH / 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(renderX, renderY, renderW, renderH);
+        }
       }
 
       // Highlight on hover (Blender Viewport Selection Highlight)
       if (this.hoveredItem === pos) {
         ctx.strokeStyle = '#4772b3';
         ctx.lineWidth = 2.0 / this.scale;
-        ctx.strokeRect(renderX, renderY, renderW, renderH);
-        ctx.fillStyle = 'rgba(71, 114, 179, 0.22)';
-        ctx.fillRect(renderX, renderY, renderW, renderH);
+        if (isCircle) {
+          ctx.beginPath();
+          ctx.ellipse(renderX + renderW / 2, renderY + renderH / 2, renderW / 2, renderH / 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(71, 114, 179, 0.22)';
+          ctx.beginPath();
+          ctx.ellipse(renderX + renderW / 2, renderY + renderH / 2, renderW / 2, renderH / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.strokeRect(renderX, renderY, renderW, renderH);
+          ctx.fillStyle = 'rgba(71, 114, 179, 0.22)';
+          ctx.fillRect(renderX, renderY, renderW, renderH);
+        }
       }
     }
 

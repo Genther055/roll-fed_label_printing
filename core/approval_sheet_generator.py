@@ -64,7 +64,12 @@ def generate_approval_pdf(
     filename_str = data.get("filename") or "макет_етикетки"
     label_w = float(data.get("label_width", 72.0))
     label_h = float(data.get("label_height", 36.0))
-    dims_str = f"{label_w:g}x{label_h:g}мм"
+    shape = data.get("shape", "rect")
+    is_circle = shape in ("circle", "round")
+    if is_circle:
+        dims_str = f"Ø{label_w:g}мм"
+    else:
+        dims_str = f"{label_w:g}x{label_h:g}мм"
     circulation_str = f"{data.get('circulation', '10000')} шт"
     roll_w_str = f"{data.get('roll_width', '330')} мм"
     exit_w_str = data.get("exit_width", "")
@@ -314,14 +319,22 @@ def generate_approval_pdf(
             else:
                 page.insert_image(placed_rect, filename=art_path)
 
-            page.draw_rect(placed_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+            if is_circle:
+                page.draw_rect(placed_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
+                page.draw_oval(placed_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+            else:
+                page.draw_rect(placed_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
             has_art = True
         except Exception as e:
             print(f"Error placing central artwork: {e}")
 
     if not has_art:
         ph_rect = fitz.Rect(120, 130, 320, 320)
-        page.draw_rect(ph_rect, color=c_magenta, fill=(0.98, 0.98, 0.99), width=1.5, dashes="[5 3] 0")
+        if is_circle:
+            page.draw_rect(ph_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
+            page.draw_oval(ph_rect, color=c_magenta, fill=(0.98, 0.98, 0.99), width=1.5, dashes="[5 3] 0")
+        else:
+            page.draw_rect(ph_rect, color=c_magenta, fill=(0.98, 0.98, 0.99), width=1.5, dashes="[5 3] 0")
         page.insert_text(fitz.Point(ph_rect.x0 + 35, ph_rect.y0 + 80), "МАКЕТ ЕТИКЕТКИ", fontname=fname_bold, fontsize=14.0, color=(0.6, 0.6, 0.7))
         page.insert_text(fitz.Point(ph_rect.x0 + 55, ph_rect.y0 + 105), dims_str, fontname=fname_bold, fontsize=12.0, color=c_dark)
 
@@ -408,7 +421,11 @@ def generate_approval_pdf(
     for i in range(repeats):
         lx0 = start_lx + i * (vis_w + gap_between)
         l_rect = fitz.Rect(lx0, ly0, lx0 + vis_w, ly0 + vis_h)
-        page.draw_rect(l_rect, color=c_magenta, fill=(0.99, 0.99, 1.0), width=0.8, dashes="[3 2] 0")
+        if is_circle:
+            page.draw_rect(l_rect, color=(0.55, 0.60, 0.65), fill=(0.99, 0.99, 1.0), width=0.4, dashes="[2.5 2] 0")
+            page.draw_oval(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
+        else:
+            page.draw_rect(l_rect, color=c_magenta, fill=(0.99, 0.99, 1.0), width=0.8, dashes="[3 2] 0")
 
         if art_path and os.path.exists(art_path):
             try:

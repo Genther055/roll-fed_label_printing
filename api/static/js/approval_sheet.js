@@ -509,7 +509,9 @@ function renderApprovalCanvas() {
 
   // 5. CENTRAL ARTWORK AREA
   ctx.fillStyle = cDark;
-  drawFittedText(`${labelW}x${labelH}мм`, 312 * s, 115 * s, 198 * s, 21.0, 14.0, true);
+  const isApprCircle = (currentLayout?.params?.shape === 'circle');
+  const apprDimsStr = isApprCircle ? `Ø${labelW}мм` : `${labelW}x${labelH}мм`;
+  drawFittedText(apprDimsStr, 312 * s, 115 * s, 198 * s, 21.0, 14.0, true);
 
   // Draw Artwork
   const artTargetBox = {
@@ -532,21 +534,58 @@ function renderApprovalCanvas() {
 
     ctx.drawImage(approvalLabelImage, px, py, pw, ph);
 
-    // Dashed cut contour
-    ctx.strokeStyle = cMagenta;
-    ctx.lineWidth = 1.2 * s;
-    ctx.setLineDash([5 * s, 3 * s]);
-    ctx.strokeRect(px, py, pw, ph);
-    ctx.setLineDash([]);
+    // Cut contour
+    if (isApprCircle) {
+      // Thin dashed bounding box ("ті квадратики візуально просто залиш тонесечким пунктиром")
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 0.6 * s;
+      ctx.setLineDash([3 * s, 2 * s]);
+      ctx.strokeRect(px, py, pw, ph);
+
+      // Circular cut contour
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.2 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.beginPath();
+      ctx.ellipse(px + pw / 2, py + ph / 2, pw / 2, ph / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.2 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.strokeRect(px, py, pw, ph);
+      ctx.setLineDash([]);
+    }
   } else {
     // Placeholder
-    ctx.fillStyle = '#fafafa';
-    ctx.fillRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
-    ctx.strokeStyle = cMagenta;
-    ctx.lineWidth = 1.2 * s;
-    ctx.setLineDash([5 * s, 3 * s]);
-    ctx.strokeRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
-    ctx.setLineDash([]);
+    if (isApprCircle) {
+      ctx.fillStyle = '#fafafa';
+      ctx.beginPath();
+      ctx.ellipse(artTargetBox.x + 130 * s, artTargetBox.y + 110 * s, 90 * s, 90 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 0.6 * s;
+      ctx.setLineDash([3 * s, 2 * s]);
+      ctx.strokeRect(artTargetBox.x + 40 * s, artTargetBox.y + 20 * s, 180 * s, 180 * s);
+
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.2 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.beginPath();
+      ctx.ellipse(artTargetBox.x + 130 * s, artTargetBox.y + 110 * s, 90 * s, 90 * s, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.2 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.strokeRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
+      ctx.setLineDash([]);
+    }
 
     ctx.fillStyle = '#999999';
     ctx.font = `bold ${12.0 * s}px sans-serif`;
@@ -671,13 +710,32 @@ function renderApprovalCanvas() {
   for (let i = 0; i < repeats; i++) {
     const lx0 = startLx + i * (visW + gapBetween);
 
-    ctx.fillStyle = '#fcfcff';
-    ctx.fillRect(lx0, ly0, visW, visH);
-    ctx.strokeStyle = cMagenta;
-    ctx.lineWidth = 0.8 * s;
-    ctx.setLineDash([3 * s, 2 * s]);
-    ctx.strokeRect(lx0, ly0, visW, visH);
-    ctx.setLineDash([]);
+    if (isApprCircle) {
+      ctx.fillStyle = '#fcfcff';
+      ctx.fillRect(lx0, ly0, visW, visH);
+      // Thin dashed bounding box
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 0.6 * s;
+      ctx.setLineDash([2.5 * s, 2 * s]);
+      ctx.strokeRect(lx0, ly0, visW, visH);
+
+      // Circular cut contour
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 0.8 * s;
+      ctx.setLineDash([3 * s, 2 * s]);
+      ctx.beginPath();
+      ctx.ellipse(lx0 + visW / 2, ly0 + visH / 2, visW / 2, visH / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = '#fcfcff';
+      ctx.fillRect(lx0, ly0, visW, visH);
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 0.8 * s;
+      ctx.setLineDash([3 * s, 2 * s]);
+      ctx.strokeRect(lx0, ly0, visW, visH);
+      ctx.setLineDash([]);
+    }
 
     if (hasLoadedImg) {
       ctx.save();
@@ -711,6 +769,7 @@ async function exportApprovalPdf() {
     date: getVal('approvalDate', ''),
     label_width: parseFloat(getVal('approvalLabelW', '72')),
     label_height: parseFloat(getVal('approvalLabelH', '36')),
+    shape: currentLayout?.params?.shape || 'rect',
     circulation: getVal('approvalCirculation', '10000'),
     roll_width: getVal('approvalRollWidth', '330'),
     exit_width: getVal('approvalExitWidth', ''),

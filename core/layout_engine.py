@@ -11,7 +11,7 @@ FINAT_SCHEMES = {
     8: {"name": "Схема 8: Лівим боком вперед (всередину)", "rotation": 270, "wound": "in", "desc": "Лівий край виходить першим, намотка всередину"},
 }
 
-def evaluate_variant(w, h, rot_deg, roll_w, printable_w, meter_l, gap_x, gap_y):
+def evaluate_variant(w, h, rot_deg, roll_w, printable_w, meter_l, gap_x, gap_y, shape="rect"):
     """
     Evaluates layout for a specific rotation (0, 90, 180, 270).
     Horizontal roll coordinates:
@@ -39,7 +39,10 @@ def evaluate_variant(w, h, rot_deg, roll_w, printable_w, meter_l, gap_x, gap_y):
     step_x = round(dim_x + gap_x, 2) # крок вбік (рапорт)
     step_y = round(dim_y + gap_y, 2) # крок по висоті полотна
 
-    label_area = w * h
+    if shape in ("circle", "round"):
+        label_area = math.pi * (w / 2.0) * (h / 2.0)
+    else:
+        label_area = w * h
     total_label_area = total_per_meter * label_area
     meter_area = roll_w * meter_l
     efficiency = round((total_label_area / meter_area) * 100.0, 2) if meter_area > 0 else 0.0
@@ -73,7 +76,8 @@ def calculate_layout(
     application_type="manual", # "manual" or "auto"
     orientation_mode="auto_max", # "auto_max", "portrait" (0), "landscape" (90), "custom"
     winding_scheme=1, # 1..8 for auto application
-    custom_rotation=0
+    custom_rotation=0,
+    shape="rect"
 ):
     """
     Calculates the optimal roll imposition for the label.
@@ -81,8 +85,8 @@ def calculate_layout(
     gap_x = max(0.0, float(gap_x))
     gap_y = max(0.0, float(gap_y))
     # Evaluate Portrait (0 deg) and Landscape (90 deg)
-    portrait_res = evaluate_variant(label_width, label_height, 0, roll_width, printable_width, meter_length, gap_x, gap_y)
-    landscape_res = evaluate_variant(label_width, label_height, 90, roll_width, printable_width, meter_length, gap_x, gap_y)
+    portrait_res = evaluate_variant(label_width, label_height, 0, roll_width, printable_width, meter_length, gap_x, gap_y, shape=shape)
+    landscape_res = evaluate_variant(label_width, label_height, 90, roll_width, printable_width, meter_length, gap_x, gap_y, shape=shape)
 
     chosen_rotation = 0
     recommendation_text = ""
@@ -116,7 +120,7 @@ def calculate_layout(
         recommendation_text = f"Автоматичне нанесення: {scheme_info['name']}. Орієнтація зафіксована відповідно до вимог етикетувального автомата."
 
     # Active chosen evaluation
-    active_eval = evaluate_variant(label_width, label_height, chosen_rotation, roll_width, printable_width, meter_length, gap_x, gap_y)
+    active_eval = evaluate_variant(label_width, label_height, chosen_rotation, roll_width, printable_width, meter_length, gap_x, gap_y, shape=shape)
 
     # Generate matrix of coordinates for rendering and imposition
     lanes = active_eval["lanes"]
@@ -155,7 +159,8 @@ def calculate_layout(
             "application_type": application_type,
             "orientation_mode": orientation_mode,
             "winding_scheme": winding_scheme,
-            "chosen_rotation": chosen_rotation
+            "chosen_rotation": chosen_rotation,
+            "shape": shape
         },
         "active": active_eval,
         "comparison": {
