@@ -231,12 +231,21 @@ def generate_imposition_pdf(
                     page1.insert_image(target_rect, filename=source_file_path, rotate=rot_on_page)
             else:
                 page1.draw_oval(target_rect, color=(0.85, 0.90, 0.95), fill=(1.0, 1.0, 1.0), width=0.3)
-                if cut_w_mm >= 16 and cut_h_mm >= 16:
-                    center_pt = pymupdf.Point(
-                        (cut_x_mm + cut_w_mm / 2.0 - 5.5) * MM_TO_PT,
-                        (cut_y_mm + cut_h_mm / 2.0 + 1.6) * MM_TO_PT
+                if cut_w_mm >= 12 and cut_h_mm >= 12:
+                    dim_text = f"{label_w_mm:g}×{label_h_mm:g}"
+                    # Prominent readable font size matching canvas appearance
+                    font_sz = min(13.0, max(7.0, min(cut_w_mm, cut_h_mm) * 0.25))
+                    f_obj = pymupdf.Font(fontfile=font_bold) if font_bold else pymupdf.Font("hebo")
+                    txt_w = f_obj.text_length(dim_text, fontsize=font_sz)
+                    tx = target_rect.x0 + (target_rect.width - txt_w) / 2.0
+                    ty = target_rect.y0 + target_rect.height / 2.0 + font_sz * 0.35
+                    page1.insert_text(
+                        pymupdf.Point(tx, ty),
+                        dim_text,
+                        fontname=fname_bold,
+                        fontsize=font_sz,
+                        color=(0.25, 0.30, 0.42)
                     )
-                    page1.insert_text(center_pt, f"{label_w_mm:g}×{label_h_mm:g}", fontname=fname_reg, fontsize=4.2, color=(0.45, 0.5, 0.6))
 
             if add_cut_lines:
                 # Circular cut contour line in magenta
@@ -251,12 +260,20 @@ def generate_imposition_pdf(
             else:
                 # Clean technical die-cut blank
                 page1.draw_rect(target_rect, color=(0.9, 0.93, 0.98), fill=(1.0, 1.0, 1.0), width=0.3)
-                if cut_w_mm >= 20 and cut_h_mm >= 14:
-                    center_pt = pymupdf.Point(
-                        (cut_x_mm + cut_w_mm / 2.0 - 5.5) * MM_TO_PT,
-                        (cut_y_mm + cut_h_mm / 2.0 + 1.6) * MM_TO_PT
+                if cut_w_mm >= 14 and cut_h_mm >= 10:
+                    dim_text = f"{label_w_mm:g}×{label_h_mm:g}"
+                    font_sz = min(13.0, max(6.5, min(cut_w_mm, cut_h_mm) * 0.22))
+                    f_obj = pymupdf.Font(fontfile=font_bold) if font_bold else pymupdf.Font("hebo")
+                    txt_w = f_obj.text_length(dim_text, fontsize=font_sz)
+                    tx = target_rect.x0 + (target_rect.width - txt_w) / 2.0
+                    ty = target_rect.y0 + target_rect.height / 2.0 + font_sz * 0.35
+                    page1.insert_text(
+                        pymupdf.Point(tx, ty),
+                        dim_text,
+                        fontname=fname_bold,
+                        fontsize=font_sz,
+                        color=(0.25, 0.30, 0.42)
                     )
-                    page1.insert_text(center_pt, f"{label_w_mm:g}×{label_h_mm:g}", fontname=fname_reg, fontsize=4.2, color=(0.45, 0.5, 0.6))
 
             if add_cut_lines:
                 page1.draw_rect(target_rect, color=(1.0, 0.0, 1.0), width=0.4)
@@ -335,7 +352,7 @@ def generate_imposition_pdf(
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 33 * MM_TO_PT), "ПАРАМЕТРИ ВИСІЧКИ", fontname=fname_bold, fontsize=9.5, color=(0.1, 0.4, 0.8))
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 40 * MM_TO_PT), f"Файл: {original_filename}", fontname=fname_reg, fontsize=8.5, color=(0.15, 0.15, 0.15))
         if is_circle:
-            page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: {label_w_mm} × {label_h_mm} мм (Кругла)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
+            page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: діаметр {label_w_mm:g} мм (Кругла)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
         else:
             page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: {label_w_mm} × {label_h_mm} мм (Прямокутна)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 52 * MM_TO_PT), f"Вильоти під обріз (бліди): {bleed_mm} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
@@ -366,28 +383,39 @@ def generate_imposition_pdf(
             page2.draw_rect(thumb_rect, color=(0.8, 0.85, 0.9), width=0.5)
         else:
             if is_circle:
-                page2.draw_rect(thumb_rect, color=(0.55, 0.60, 0.65), width=0.3, dashes="[2 2] 0")
-                page2.draw_oval(thumb_rect, color=(0.9, 0.2, 0.6), fill=(1.0, 1.0, 1.0), width=0.8)
+                # Perfect 1:1 circular thumbnail (prevent oval distortion)
+                side_mm = min(thumb_rect.width, thumb_rect.height) * PT_TO_MM - 2.0
+                r_pt = (side_mm / 2.0) * MM_TO_PT
+                tcx = (thumb_rect.x0 + thumb_rect.x1) / 2.0
+                tcy = (thumb_rect.y0 + thumb_rect.y1) / 2.0
+                circle_thumb = pymupdf.Rect(tcx - r_pt, tcy - r_pt, tcx + r_pt, tcy + r_pt)
+
+                # Thin dashed bounding square
+                page2.draw_rect(circle_thumb, color=(0.55, 0.60, 0.65), width=0.3, dashes="[2 2] 0")
+                # White fill and pink circular cut contour
+                page2.draw_oval(circle_thumb, color=(0.9, 0.2, 0.6), fill=(1.0, 1.0, 1.0), width=0.8)
+
+                # Clean centered text: "ВИСІЧКА" & "діаметр 40 мм"
+                f_obj = pymupdf.Font(fontfile=font_bold) if font_bold else pymupdf.Font("hebo")
+                
+                title_str = "ВИСІЧКА"
+                t_w = f_obj.text_length(title_str, fontsize=8.0)
                 page2.insert_text(
-                    pymupdf.Point(thumb_rect.x0 + 3 * MM_TO_PT, thumb_rect.y0 + 12 * MM_TO_PT),
-                    "ВИСІЧКА",
+                    pymupdf.Point(tcx - t_w / 2.0, tcy - 3.5 * MM_TO_PT),
+                    title_str,
                     fontname=fname_bold,
-                    fontsize=7.5,
+                    fontsize=8.0,
                     color=(0.9, 0.2, 0.6)
                 )
+
+                diam_str = f"діаметр {label_w_mm:g} мм"
+                d_w = f_obj.text_length(diam_str, fontsize=8.0)
                 page2.insert_text(
-                    pymupdf.Point(thumb_rect.x0 + 3 * MM_TO_PT, thumb_rect.y0 + 20 * MM_TO_PT),
-                    f"{label_w_mm:g} × {label_h_mm:g} мм",
+                    pymupdf.Point(tcx - d_w / 2.0, tcy + 4.5 * MM_TO_PT),
+                    diam_str,
                     fontname=fname_bold,
-                    fontsize=7.0,
+                    fontsize=8.0,
                     color=(0.1, 0.2, 0.4)
-                )
-                page2.insert_text(
-                    pymupdf.Point(thumb_rect.x0 + 3 * MM_TO_PT, thumb_rect.y0 + 28 * MM_TO_PT),
-                    "Кругла (без макету)",
-                    fontname=fname_reg,
-                    fontsize=6.5,
-                    color=(0.5, 0.55, 0.65)
                 )
             else:
                 page2.draw_rect(thumb_rect, color=(0.9, 0.2, 0.6), fill=(1.0, 1.0, 1.0), width=0.8)
