@@ -197,7 +197,7 @@ class ExportPdfHandler(BaseHandler):
             h = int(layout.get("params", {}).get("label_height", 80))
             shape = layout.get("params", {}).get("shape", "rect")
             if shape in ("circle", "round"):
-                clean_name = f"спуск_висічки_Ø{w}мм"
+                clean_name = f"спуск_висічки_{w}x{h}мм"
             else:
                 clean_name = f"спуск_висічки_{w}x{h}мм"
 

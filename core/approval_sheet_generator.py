@@ -67,7 +67,7 @@ def generate_approval_pdf(
     shape = data.get("shape", "rect")
     is_circle = shape in ("circle", "round")
     if is_circle:
-        dims_str = f"Ø{label_w:g}мм"
+        dims_str = f"{label_w:g}x{label_h:g}мм"
     else:
         dims_str = f"{label_w:g}x{label_h:g}мм"
     circulation_str = f"{data.get('circulation', '10000')} шт"

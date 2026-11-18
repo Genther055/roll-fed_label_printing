@@ -510,7 +510,7 @@ function renderApprovalCanvas() {
   // 5. CENTRAL ARTWORK AREA
   ctx.fillStyle = cDark;
   const isApprCircle = (currentLayout?.params?.shape === 'circle');
-  const apprDimsStr = isApprCircle ? `Ø${labelW}мм` : `${labelW}x${labelH}мм`;
+  const apprDimsStr = `${labelW}x${labelH}мм`;
   drawFittedText(apprDimsStr, 312 * s, 115 * s, 198 * s, 21.0, 14.0, true);
 
   // Draw Artwork

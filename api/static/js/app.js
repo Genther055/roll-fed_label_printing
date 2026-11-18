@@ -108,15 +108,21 @@ function setDimensionOnlyMode() {
 
   const shape = document.querySelector('input[name="labelShape"]:checked')?.value || 'rect';
   const isCircle = (shape === 'circle');
-  const labelW = parseNumInput('labelWidthInput', 50.0, 0.1);
+  let labelW = parseNumInput('labelWidthInput', 50.0, 0.1);
   let labelH = parseNumInput('labelHeightInput', 80.0, 0.1);
   if (isCircle) {
-    labelH = labelW;
+    const dVal = parseNumInput('labelDiameterInput', 40.0, 0.1);
+    labelW = dVal;
+    labelH = dVal;
+    const dEl = document.getElementById('labelDiameterInput');
+    if (dEl) dEl.value = dVal;
+    const wEl = document.getElementById('labelWidthInput');
     const hEl = document.getElementById('labelHeightInput');
-    if (hEl) hEl.value = labelW;
+    if (wEl) wEl.value = dVal;
+    if (hEl) hEl.value = dVal;
   }
 
-  const displayName = isCircle ? `спуск_висічки_Ø${labelW}мм` : `спуск_висічки_${labelW}x${labelH}мм`;
+  const displayName = `спуск_висічки_${labelW}x${labelH}мм`;
   currentFile = { 
     filename: '', 
     type: 'none', 
@@ -126,7 +132,7 @@ function setDimensionOnlyMode() {
   currentPreviewUrl = null;
 
   document.getElementById('currentFileName').innerText = displayName;
-  document.getElementById('currentFileDims').innerText = isCircle ? `Ø ${labelW} мм • Кругла висічка` : `${labelW} × ${labelH} мм • Висічка`;
+  document.getElementById('currentFileDims').innerText = isCircle ? `${labelW} × ${labelH} мм • Кругла висічка` : `${labelW} × ${labelH} мм • Висічка`;
   document.getElementById('currentFilePreview').src = CAD_SVG_ICON;
   document.getElementById('currentFileInfoPanel').classList.remove('hidden');
 
@@ -164,14 +170,16 @@ function applyFileInspection(info, filename, type) {
 async function recalculate() {
   const shape = document.querySelector('input[name="labelShape"]:checked')?.value || 'rect';
   const isCircle = (shape === 'circle');
-  const labelW = parseNumInput('labelWidthInput', 24.0, 0.1);
+  let labelW = parseNumInput('labelWidthInput', 24.0, 0.1);
   let labelH = parseNumInput('labelHeightInput', 40.0, 0.1);
   if (isCircle) {
-    labelH = labelW;
+    const dVal = parseNumInput('labelDiameterInput', labelW, 0.1);
+    labelW = dVal;
+    labelH = dVal;
+    const wEl = document.getElementById('labelWidthInput');
     const hEl = document.getElementById('labelHeightInput');
-    if (hEl && document.activeElement !== hEl) {
-      hEl.value = labelW;
-    }
+    if (wEl && document.activeElement !== wEl) wEl.value = dVal;
+    if (hEl && document.activeElement !== hEl) hEl.value = dVal;
   }
   const bleed = parseNumInput('bleedInput', 0.0, 0.0);
   const rollW = parseNumInput('rollWidthInput', 330.0, 10.0);
@@ -181,12 +189,12 @@ async function recalculate() {
   const meterL = parseNumInput('meterLengthInput', 1000.0, 10.0);
 
   if (currentFile && currentFile.isNoFile) {
-    const displayName = isCircle ? `спуск_висічки_Ø${labelW}мм` : `спуск_висічки_${labelW}x${labelH}мм`;
+    const displayName = `спуск_висічки_${labelW}x${labelH}мм`;
     currentFile.original_filename = displayName;
     const nameEl = document.getElementById('currentFileName');
     const dimsEl = document.getElementById('currentFileDims');
     if (nameEl) nameEl.innerText = displayName;
-    if (dimsEl) dimsEl.innerText = isCircle ? `Ø ${labelW} мм • Кругла висічка` : `${labelW} × ${labelH} мм • Висічка`;
+    if (dimsEl) dimsEl.innerText = isCircle ? `${labelW} × ${labelH} мм • Кругла висічка` : `${labelW} × ${labelH} мм • Висічка`;
   }
 
   const appType = document.querySelector('input[name="appType"]:checked')?.value || 'manual';
@@ -354,43 +362,44 @@ function initUIEvents() {
     r.addEventListener('change', recalculate);
   });
 
-  // Label Shape radio (rect / circle)
+  // Label Shape radio (rect / circle) - Clean toggle without emojis or icons
   document.querySelectorAll('input[name="labelShape"]').forEach(r => {
     r.addEventListener('change', (e) => {
       const isCircle = e.target.value === 'circle';
-      const wEl = document.getElementById('labelWidthInput');
-      const hEl = document.getElementById('labelHeightInput');
-      const wText = document.getElementById('labelWidthText');
-      const hText = document.getElementById('labelHeightText');
+      const cBlock = document.getElementById('circleDimBlock');
+      const rBlockW = document.getElementById('rectDimBlockW');
+      const rBlockH = document.getElementById('rectDimBlockH');
+      const dInput = document.getElementById('labelDiameterInput');
+      const wInput = document.getElementById('labelWidthInput');
+      const hInput = document.getElementById('labelHeightInput');
+
       if (isCircle) {
-        if (wEl && hEl) {
-          hEl.value = wEl.value;
+        if (cBlock) cBlock.classList.remove('hidden');
+        if (rBlockW) rBlockW.classList.add('hidden');
+        if (rBlockH) rBlockH.classList.add('hidden');
+        if (dInput && wInput) {
+          dInput.value = wInput.value || 40;
+          if (hInput) hInput.value = dInput.value;
         }
-        if (wText) wText.innerText = 'Діаметр (Ø W):';
-        if (hText) hText.innerText = 'Діаметр (Ø H):';
       } else {
-        if (wText) wText.innerText = 'Ширина висічки (W):';
-        if (hText) hText.innerText = 'Висота висічки (H):';
+        if (cBlock) cBlock.classList.add('hidden');
+        if (rBlockW) rBlockW.classList.remove('hidden');
+        if (rBlockH) rBlockH.classList.remove('hidden');
       }
       recalculate();
     });
   });
 
-  const wInputSync = document.getElementById('labelWidthInput');
-  const hInputSync = document.getElementById('labelHeightInput');
-  if (wInputSync && hInputSync) {
-    wInputSync.addEventListener('input', () => {
-      const isCircle = document.querySelector('input[name="labelShape"]:checked')?.value === 'circle';
-      if (isCircle) {
-        hInputSync.value = wInputSync.value;
-      }
+  const dInputSync = document.getElementById('labelDiameterInput');
+  if (dInputSync) {
+    dInputSync.addEventListener('input', () => {
+      const wInput = document.getElementById('labelWidthInput');
+      const hInput = document.getElementById('labelHeightInput');
+      if (wInput) wInput.value = dInputSync.value;
+      if (hInput) hInput.value = dInputSync.value;
+      recalculate();
     });
-    hInputSync.addEventListener('input', () => {
-      const isCircle = document.querySelector('input[name="labelShape"]:checked')?.value === 'circle';
-      if (isCircle) {
-        wInputSync.value = hInputSync.value;
-      }
-    });
+    dInputSync.addEventListener('change', recalculate);
   }
 
   // Dimension-only mode button

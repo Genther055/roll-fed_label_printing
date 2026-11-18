@@ -425,7 +425,7 @@ class RollCanvas {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const origW = this.layout.params.label_width;
-            ctx.fillText(`Ø${origW}`, 0, 0);
+            ctx.fillText(`${origW}×${origW}`, 0, 0);
             ctx.restore();
           }
         }

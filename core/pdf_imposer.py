@@ -94,7 +94,7 @@ def generate_imposition_pdf(
             original_filename = re.sub(r'^[a-f0-9]{8}_', '', raw_name)
         else:
             if is_circle:
-                original_filename = f"спуск_висічки_Ø{int(label_w_mm)}мм"
+                original_filename = f"спуск_висічки_{int(label_w_mm)}x{int(label_h_mm)}мм"
             else:
                 original_filename = f"спуск_висічки_{int(label_w_mm)}x{int(label_h_mm)}мм"
 
@@ -236,7 +236,7 @@ def generate_imposition_pdf(
                         (cut_x_mm + cut_w_mm / 2.0 - 5.5) * MM_TO_PT,
                         (cut_y_mm + cut_h_mm / 2.0 + 1.6) * MM_TO_PT
                     )
-                    page1.insert_text(center_pt, f"Ø{label_w_mm:g}", fontname=fname_reg, fontsize=4.2, color=(0.45, 0.5, 0.6))
+                    page1.insert_text(center_pt, f"{label_w_mm:g}×{label_h_mm:g}", fontname=fname_reg, fontsize=4.2, color=(0.45, 0.5, 0.6))
 
             if add_cut_lines:
                 # Circular cut contour line in magenta
@@ -335,7 +335,7 @@ def generate_imposition_pdf(
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 33 * MM_TO_PT), "ПАРАМЕТРИ ВИСІЧКИ", fontname=fname_bold, fontsize=9.5, color=(0.1, 0.4, 0.8))
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 40 * MM_TO_PT), f"Файл: {original_filename}", fontname=fname_reg, fontsize=8.5, color=(0.15, 0.15, 0.15))
         if is_circle:
-            page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: Ø {label_w_mm} мм (Кругла)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
+            page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: {label_w_mm} × {label_h_mm} мм (Кругла)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
         else:
             page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 46 * MM_TO_PT), f"Розмір висічки: {label_w_mm} × {label_h_mm} мм (Прямокутна)", fontname=fname_bold, fontsize=8.5, color=(0.15, 0.15, 0.15))
         page2.insert_text(pymupdf.Point(15 * MM_TO_PT, 52 * MM_TO_PT), f"Вильоти під обріз (бліди): {bleed_mm} мм", fontname=fname_reg, fontsize=8.5, color=(0.3, 0.3, 0.3))
@@ -377,7 +377,7 @@ def generate_imposition_pdf(
                 )
                 page2.insert_text(
                     pymupdf.Point(thumb_rect.x0 + 3 * MM_TO_PT, thumb_rect.y0 + 20 * MM_TO_PT),
-                    f"Ø {label_w_mm:g} мм",
+                    f"{label_w_mm:g} × {label_h_mm:g} мм",
                     fontname=fname_bold,
                     fontsize=7.0,
                     color=(0.1, 0.2, 0.4)
