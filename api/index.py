@@ -28,6 +28,9 @@ def get_static_folder():
             return candidate
     return os.path.join(BASE_DIR, "static")
 
+LOCAL_LAYOUT_DIR = r"D:\бланки  і спуски\розкладка"
+LOCAL_APPROVAL_DIR = r"D:\бланки  і спуски\бланки"
+
 app = Flask(__name__, static_folder=get_static_folder(), static_url_path="/static")
 
 class VercelPathMiddleware:
@@ -315,6 +318,16 @@ def api_export_pdf():
             circulation=circulation,
             waste=waste
         )
+        # Auto-save directly to local folder if D: drive / folder exists
+        try:
+            if os.path.exists(r"D:\бланки  і спуски") or os.path.exists(r"D:\\"):
+                os.makedirs(LOCAL_LAYOUT_DIR, exist_ok=True)
+                local_dest = os.path.join(LOCAL_LAYOUT_DIR, download_name)
+                with open(local_dest, "wb") as f:
+                    f.write(pdf_bytes)
+        except Exception as save_err:
+            print(f"Error saving imposition to {LOCAL_LAYOUT_DIR}: {save_err}")
+
         response = Response(pdf_bytes, mimetype="application/pdf")
         ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
         quoted_utf8 = urllib.parse.quote(download_name)
@@ -384,6 +397,16 @@ def api_export_approval_sheet():
             data=approval_data,
             output_pdf_path=None
         )
+        # Auto-save directly to local folder if D: drive / folder exists
+        try:
+            if os.path.exists(r"D:\бланки  і спуски") or os.path.exists(r"D:\\"):
+                os.makedirs(LOCAL_APPROVAL_DIR, exist_ok=True)
+                local_dest = os.path.join(LOCAL_APPROVAL_DIR, download_name)
+                with open(local_dest, "wb") as f:
+                    f.write(pdf_bytes)
+        except Exception as save_err:
+            print(f"Error saving approval sheet to {LOCAL_APPROVAL_DIR}: {save_err}")
+
         response = Response(pdf_bytes, mimetype="application/pdf")
         ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
         quoted_utf8 = urllib.parse.quote(download_name)

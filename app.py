@@ -4,6 +4,7 @@ import json
 import uuid
 import re
 import urllib.parse
+import shutil
 import tornado.ioloop
 import tornado.web
 from tornado.escape import json_decode
@@ -19,6 +20,9 @@ if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     import tempfile
     UPLOADS_DIR = os.path.join(tempfile.gettempdir(), "uploads")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+LOCAL_LAYOUT_DIR = r"D:\бланки  і спуски\розкладка"
+LOCAL_APPROVAL_DIR = r"D:\бланки  і спуски\бланки"
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(SAMPLES_DIR, exist_ok=True)
@@ -227,10 +231,23 @@ class ExportPdfHandler(BaseHandler):
                 circulation=circulation,
                 waste=waste
             )
-            self.write({
-                "download_url": f"/download/{disk_name}",
-                "filename": download_name
-            })
+
+            # Auto-save directly to local directory
+            try:
+                os.makedirs(LOCAL_LAYOUT_DIR, exist_ok=True)
+                local_dest = os.path.join(LOCAL_LAYOUT_DIR, download_name)
+                shutil.copy2(out_path, local_dest)
+            except Exception as save_err:
+                print(f"Error copying imposition to {LOCAL_LAYOUT_DIR}: {save_err}")
+
+            with open(out_path, "rb") as f:
+                pdf_bytes = f.read()
+
+            self.set_header("Content-Type", "application/pdf")
+            ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
+            quoted_utf8 = urllib.parse.quote(download_name)
+            self.set_header("Content-Disposition", f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{quoted_utf8}')
+            self.write(pdf_bytes)
         except Exception as e:
             self.set_status(500)
             self.write({"error": f"PDF Export failed: {str(e)}"})
@@ -283,6 +300,16 @@ class ExportApprovalSheetHandler(BaseHandler):
                 data=approval_data,
                 output_pdf_path=None
             )
+
+            # Auto-save directly to local directory
+            try:
+                os.makedirs(LOCAL_APPROVAL_DIR, exist_ok=True)
+                local_dest = os.path.join(LOCAL_APPROVAL_DIR, download_name)
+                with open(local_dest, "wb") as f:
+                    f.write(pdf_bytes)
+            except Exception as save_err:
+                print(f"Error saving approval sheet to {LOCAL_APPROVAL_DIR}: {save_err}")
+
             self.set_header("Content-Type", "application/pdf")
             ascii_fallback = download_name.encode('ascii', 'replace').decode('ascii')
             quoted_utf8 = urllib.parse.quote(download_name)
