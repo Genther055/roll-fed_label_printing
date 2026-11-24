@@ -797,13 +797,25 @@ async function exportImpositionPdf() {
   btn.innerHTML = `<span class="inline-block w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span> Генерація...`;
   btn.disabled = true;
 
-  const cleanOriginalName = (currentFile && currentFile.original_filename)
+  let cleanOriginalName = (currentFile && currentFile.original_filename)
     ? currentFile.original_filename.replace(/\.[^/.]+$/, "")
-    : `спуск_висічки_${currentLayout.params.label_width}x${currentLayout.params.label_height}мм`;
+    : `висічки_${currentLayout.params.label_width}x${currentLayout.params.label_height}мм`;
+
+  if (!cleanOriginalName.toLowerCase().startsWith('спуск')) {
+    cleanOriginalName = `спуск_${cleanOriginalName}`;
+  }
 
   const circInput = document.getElementById('calcCirculationInput') || document.getElementById('calcCirculation');
   const circVal = parseInt(circInput?.value) || 10000;
   const wasteVal = document.getElementById('calcWastePercent')?.value || '5';
+
+  if (window.location.hostname.includes('vercel.app') && currentUploadedFile && currentUploadedFile.size > 4.5 * 1024 * 1024) {
+    const sizeMb = (currentUploadedFile.size / (1024 * 1024)).toFixed(1);
+    alert(`Файл завеликий (${sizeMb} МБ) для хмарного сайту Vercel (ліміт сервера 4.5 МБ).\nБудь ласка, відкрийте програму локально на комп'ютері через start.bat (http://localhost:8088), щоб генерувати спуски для важких файлів без обмежень!`);
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+    return;
+  }
 
   try {
     let fetchOptions;
@@ -906,7 +918,11 @@ async function exportImpositionPdf() {
     }
   } catch (err) {
     console.error('Export failed:', err);
-    alert('Не вдалося експортувати PDF.');
+    if (window.location.hostname.includes('vercel.app') && currentUploadedFile && currentUploadedFile.size > 4 * 1024 * 1024) {
+      alert(`Не вдалося експортувати: файл завеликий для хмарного Vercel (${(currentUploadedFile.size / (1024 * 1024)).toFixed(1)} МБ). Відкрийте програму локально на комп'ютері через start.bat.`);
+    } else {
+      alert(`Не вдалося експортувати PDF: ${err.message || err}`);
+    }
   } finally {
     btn.innerHTML = originalHtml;
     btn.disabled = false;

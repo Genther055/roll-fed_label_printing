@@ -287,7 +287,11 @@ def api_export_pdf():
             clean_name = f"спуск_висічки_{w}x{h}мм"
 
     base_no_ext = os.path.splitext(clean_name)[0]
-    download_name = f"{base_no_ext}.pdf"
+    # Always prefix with "спуск_" if not already present
+    if not base_no_ext.lower().startswith("спуск"):
+        download_name = f"спуск_{base_no_ext}.pdf"
+    else:
+        download_name = f"{base_no_ext}.pdf"
 
     circulation = int(data.get("circulation") or 10000)
     waste = str(data.get("waste", "5"))

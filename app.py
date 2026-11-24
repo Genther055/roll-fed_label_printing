@@ -206,8 +206,11 @@ class ExportPdfHandler(BaseHandler):
                 clean_name = f"спуск_висічки_{w}x{h}мм"
 
         base_no_ext = os.path.splitext(clean_name)[0]
-        # Downloaded file name: exact file name with .pdf extension
-        download_name = f"{base_no_ext}.pdf"
+        # Downloaded file name: always prefix with "спуск_" if not already present
+        if not base_no_ext.lower().startswith("спуск"):
+            download_name = f"спуск_{base_no_ext}.pdf"
+        else:
+            download_name = f"{base_no_ext}.pdf"
 
         # Unique file on disk to prevent concurrent collision
         disk_name = f"{uuid.uuid4().hex[:8]}_{download_name}"
