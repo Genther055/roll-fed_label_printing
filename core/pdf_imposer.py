@@ -104,6 +104,22 @@ def generate_imposition_pdf(
     src_doc = pymupdf.open(source_file_path) if (has_source and is_pdf) else None
     src_clip = get_source_cut_clip(src_doc[0]) if (src_doc and is_pdf) else None
 
+    # Pre-render 300 DPI high-res compressed stream for heavy source PDFs (> 2 MB)
+    # This prevents multi-megabyte PDF duplication across repeats and keeps output size < 1.5 MB
+    src_image_bytes = None
+    if has_source and is_pdf and src_doc:
+        try:
+            src_size = os.path.getsize(source_file_path) if os.path.exists(source_file_path) else 0
+            if src_size > 2.0 * 1024 * 1024:
+                mat = pymupdf.Matrix(300 / 72, 300 / 72)
+                p0 = src_doc[0]
+                clip = src_clip if src_clip else None
+                pix = p0.get_pixmap(matrix=mat, clip=clip, alpha=False)
+                src_image_bytes = pix.tobytes(output="jpg", jpg_quality=92)
+        except Exception as pre_err:
+            print("Notice: Could not pre-compress heavy PDF to 300 DPI stream:", pre_err)
+            src_image_bytes = None
+
     # =========================================================================
     # PAGE 1: IMPOSITION ON 1000 mm x 330 mm ROLL
     # =========================================================================
@@ -225,7 +241,9 @@ def generate_imposition_pdf(
             page1.draw_rect(target_rect, color=(0.55, 0.60, 0.65), width=0.25, dashes="[2 2] 0")
             if has_source:
                 rot_on_page = (pos["rotation"] + 270) % 360
-                if is_pdf and src_doc:
+                if src_image_bytes:
+                    page1.insert_image(target_rect, stream=src_image_bytes, rotate=rot_on_page)
+                elif is_pdf and src_doc:
                     page1.show_pdf_page(target_rect, src_doc, 0, clip=src_clip, rotate=rot_on_page)
                 else:
                     page1.insert_image(target_rect, filename=source_file_path, rotate=rot_on_page)
@@ -253,7 +271,9 @@ def generate_imposition_pdf(
         else:
             if has_source:
                 rot_on_page = (pos["rotation"] + 270) % 360
-                if is_pdf and src_doc:
+                if src_image_bytes:
+                    page1.insert_image(target_rect, stream=src_image_bytes, rotate=rot_on_page)
+                elif is_pdf and src_doc:
                     page1.show_pdf_page(target_rect, src_doc, 0, clip=src_clip, rotate=rot_on_page)
                 else:
                     page1.insert_image(target_rect, filename=source_file_path, rotate=rot_on_page)
@@ -376,7 +396,9 @@ def generate_imposition_pdf(
         # Miniature artwork preview inside KPI Box
         thumb_rect = pymupdf.Rect(155 * MM_TO_PT, 71 * MM_TO_PT, 185 * MM_TO_PT, 106 * MM_TO_PT)
         if has_source:
-            if is_pdf and src_doc:
+            if src_image_bytes:
+                page2.insert_image(thumb_rect, stream=src_image_bytes, rotate=0)
+            elif is_pdf and src_doc:
                 page2.show_pdf_page(thumb_rect, src_doc, 0, rotate=0)
             else:
                 page2.insert_image(thumb_rect, filename=source_file_path, rotate=0)
