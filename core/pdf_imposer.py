@@ -29,10 +29,11 @@ def get_cyrillic_font():
         bold_font = reg_font
     return reg_font, bold_font
 
-def get_source_cut_clip(src_page):
+def get_source_cut_clip(src_page, label_w_mm=None, label_h_mm=None, bleed_mm=0.0):
     """
     Finds the cut contour rect or TrimBox in the source PDF page to clip to.
-    If no contour or TrimBox is found, returns the page rect.
+    If none found, but label_w_mm and label_h_mm are smaller than page rect,
+    clips symmetrically around the center of the page.
     """
     drawings = src_page.get_drawings()
     for d in drawings:
@@ -48,6 +49,23 @@ def get_source_cut_clip(src_page):
     trimbox = getattr(src_page, 'trimbox', None)
     if trimbox and round(trimbox.width, 1) != round(src_page.rect.width, 1):
         return trimbox
+
+    # If label cut size is specified and smaller than page rect, clip symmetrically from center
+    if label_w_mm and label_h_mm:
+        pw_mm = src_page.rect.width * PT_TO_MM
+        ph_mm = src_page.rect.height * PT_TO_MM
+        if pw_mm > (label_w_mm + 0.5) or ph_mm > (label_h_mm + 0.5):
+            target_w_pt = label_w_mm * MM_TO_PT
+            target_h_pt = label_h_mm * MM_TO_PT
+            cx = (src_page.rect.x0 + src_page.rect.x1) / 2.0
+            cy = (src_page.rect.y0 + src_page.rect.y1) / 2.0
+            return pymupdf.Rect(
+                cx - target_w_pt / 2.0,
+                cy - target_h_pt / 2.0,
+                cx + target_w_pt / 2.0,
+                cy + target_h_pt / 2.0
+            )
+
     return src_page.rect
 
 def generate_imposition_pdf(
@@ -102,7 +120,7 @@ def generate_imposition_pdf(
 
     doc = pymupdf.open()
     src_doc = pymupdf.open(source_file_path) if (has_source and is_pdf) else None
-    src_clip = get_source_cut_clip(src_doc[0]) if (src_doc and is_pdf) else None
+    src_clip = get_source_cut_clip(src_doc[0], label_w_mm, label_h_mm, bleed_mm) if (src_doc and is_pdf) else None
 
     # Pre-render 300 DPI high-res compressed stream for heavy source PDFs (> 2 MB)
     # This prevents multi-megabyte PDF duplication across repeats and keeps output size < 1.5 MB

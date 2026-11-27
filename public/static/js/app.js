@@ -195,6 +195,20 @@ async function recalculate() {
     const dimsEl = document.getElementById('currentFileDims');
     if (nameEl) nameEl.innerText = displayName;
     if (dimsEl) dimsEl.innerText = isCircle ? `${labelW} × ${labelH} мм • Кругла висічка` : `${labelW} × ${labelH} мм • Висічка`;
+  } else if (currentFile && currentFile.total_width_mm) {
+    const totalW = currentFile.total_width_mm;
+    const totalH = currentFile.total_height_mm;
+    if (totalW > (labelW + 0.1) || totalH > (labelH + 0.1)) {
+      const calcBleed = Math.max(0, Math.round(((totalW - labelW) / 2.0) * 10) / 10);
+      const bleedEl = document.getElementById('bleedInput');
+      if (bleedEl && (parseFloat(bleedEl.value) === 0 || document.activeElement !== bleedEl)) {
+        bleedEl.value = calcBleed;
+      }
+      const dimsEl = document.getElementById('currentFileDims');
+      if (dimsEl) {
+        dimsEl.innerText = `${labelW} × ${labelH} мм (файл: ${totalW} × ${totalH} мм • припуски: ${calcBleed} мм)`;
+      }
+    }
   }
 
   const appType = document.querySelector('input[name="appType"]:checked')?.value || 'manual';

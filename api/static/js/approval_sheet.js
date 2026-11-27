@@ -226,6 +226,18 @@ function renderApprovalCanvas() {
     ctx.fillText(String(text), x, y);
   }
 
+  function drawCenteredText(text, cx, y, maxW, startPt, minPt = 4.5, isBold = true) {
+    let sz = startPt;
+    while (sz > minPt) {
+      ctx.font = `${isBold ? 'bold ' : ''}${sz * s}px sans-serif`;
+      if (ctx.measureText(String(text)).width <= maxW) break;
+      sz -= 0.25;
+    }
+    ctx.font = `${isBold ? 'bold ' : ''}${Math.max(sz, minPt) * s}px sans-serif`;
+    const tw = ctx.measureText(String(text)).width;
+    ctx.fillText(String(text), cx - tw / 2, y);
+  }
+
   // 1. TOP HEADER BANNER
   ctx.fillStyle = cHeaderCyan;
   ctx.fillRect(0, 0, W, 44.8 * s);
@@ -511,14 +523,13 @@ function renderApprovalCanvas() {
   ctx.fillStyle = cDark;
   const isApprCircle = (currentLayout?.params?.shape === 'circle');
   const apprDimsStr = `${labelW}x${labelH}мм`;
-  drawFittedText(apprDimsStr, 312 * s, 115 * s, 198 * s, 21.0, 14.0, true);
 
-  // Draw Artwork
+  // Draw Artwork (Spanning generous area across the left half up to right sidebar)
   const artTargetBox = {
-    x: 32 * s,
-    y: 110 * s,
-    w: 264 * s,
-    h: 240 * s
+    x: 28 * s,
+    y: 122 * s,
+    w: 480 * s,
+    h: 223 * s
   };
 
   if (approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0) {
@@ -534,43 +545,90 @@ function renderApprovalCanvas() {
 
     ctx.drawImage(approvalLabelImage, px, py, pw, ph);
 
+    // Calculate cut contour position (inset if file has bleeds)
+    let cutX = px, cutY = py, cutW = pw, cutH = ph;
+    const totalW = currentFile?.total_width_mm || 0;
+    const totalH = currentFile?.total_height_mm || 0;
+    if (totalW > (labelW + 0.1) || totalH > (labelH + 0.1)) {
+      const bleedXRatio = Math.max(0, (totalW - labelW) / (2 * totalW));
+      const bleedYRatio = Math.max(0, (totalH - labelH) / (2 * totalH));
+      cutX = px + pw * bleedXRatio;
+      cutY = py + ph * bleedYRatio;
+      cutW = pw * (1 - 2 * bleedXRatio);
+      cutH = ph * (1 - 2 * bleedYRatio);
+    }
+
+    // Centered dimension text above the cut contour
+    const cx = cutX + cutW / 2;
+    const ty = Math.max(86 * s, cutY - 10 * s);
+    drawCenteredText(apprDimsStr, cx, ty, 280 * s, 19.0, 13.0, true);
+
     // Cut contour
     if (isApprCircle) {
-      // Thin dashed bounding box ("ті квадратики візуально просто залиш тонесечким пунктиром")
+      // Thin dashed bounding box
       ctx.strokeStyle = '#888888';
       ctx.lineWidth = 0.6 * s;
       ctx.setLineDash([3 * s, 2 * s]);
-      ctx.strokeRect(px, py, pw, ph);
+      ctx.strokeRect(cutX, cutY, cutW, cutH);
 
       // Circular cut contour
       ctx.strokeStyle = cMagenta;
       ctx.lineWidth = 1.2 * s;
       ctx.setLineDash([5 * s, 3 * s]);
       ctx.beginPath();
-      ctx.ellipse(px + pw / 2, py + ph / 2, pw / 2, ph / 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(cutX + cutW / 2, cutY + cutH / 2, cutW / 2, cutH / 2, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
     } else {
       ctx.strokeStyle = cMagenta;
       ctx.lineWidth = 1.2 * s;
       ctx.setLineDash([5 * s, 3 * s]);
-      ctx.strokeRect(px, py, pw, ph);
+      ctx.strokeRect(cutX, cutY, cutW, cutH);
       ctx.setLineDash([]);
     }
   } else {
     // Placeholder
+    const phBox = {
+      x: (artTargetBox.x + artTargetBox.w / 2) - 140 * s,
+      y: 140 * s,
+      w: 280 * s,
+      h: 180 * s
+    };
     if (isApprCircle) {
       ctx.fillStyle = '#fafafa';
       ctx.beginPath();
-      ctx.ellipse(artTargetBox.x + 130 * s, artTargetBox.y + 110 * s, 90 * s, 90 * s, 0, 0, Math.PI * 2);
+      ctx.ellipse(phBox.x + phBox.w / 2, phBox.y + phBox.h / 2, phBox.h / 2, phBox.h / 2, 0, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = '#888888';
       ctx.lineWidth = 0.6 * s;
       ctx.setLineDash([3 * s, 2 * s]);
-      ctx.strokeRect(artTargetBox.x + 40 * s, artTargetBox.y + 20 * s, 180 * s, 180 * s);
+      ctx.strokeRect(phBox.x + phBox.w / 2 - phBox.h / 2, phBox.y, phBox.h, phBox.h);
 
       ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.5 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(phBox.x, phBox.y, phBox.w, phBox.h);
+      ctx.strokeStyle = cMagenta;
+      ctx.lineWidth = 1.5 * s;
+      ctx.setLineDash([5 * s, 3 * s]);
+      ctx.strokeRect(phBox.x, phBox.y, phBox.w, phBox.h);
+      ctx.setLineDash([]);
+    }
+
+    ctx.fillStyle = '#888899';
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${14.0 * s}px sans-serif`;
+    ctx.fillText('МАКЕТ ЕТИКЕТКИ', phBox.x + phBox.w / 2, phBox.y + phBox.h / 2);
+
+    ctx.fillStyle = cDark;
+    drawCenteredText(apprDimsStr, phBox.x + phBox.w / 2, phBox.y - 10 * s, 240 * s, 18.0, 12.0, true);
+    ctx.textAlign = 'start';
+  }
       ctx.lineWidth = 1.2 * s;
       ctx.setLineDash([5 * s, 3 * s]);
       ctx.beginPath();
@@ -769,6 +827,9 @@ async function exportApprovalPdf() {
     date: getVal('approvalDate', ''),
     label_width: parseFloat(getVal('approvalLabelW', '72')),
     label_height: parseFloat(getVal('approvalLabelH', '36')),
+    total_width_mm: currentFile?.total_width_mm || 0,
+    total_height_mm: currentFile?.total_height_mm || 0,
+    bleed: (currentFile?.total_width_mm && currentFile.total_width_mm > parseFloat(getVal('approvalLabelW', '72'))) ? ((currentFile.total_width_mm - parseFloat(getVal('approvalLabelW', '72'))) / 2) : 0,
     shape: currentLayout?.params?.shape || 'rect',
     circulation: getVal('approvalCirculation', '10000'),
     roll_width: getVal('approvalRollWidth', '330'),

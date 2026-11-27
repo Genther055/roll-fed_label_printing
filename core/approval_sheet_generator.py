@@ -279,25 +279,33 @@ def generate_approval_pdf(
     # =========================================================================
     # 5. CENTRAL ARTWORK AREA (Top)
     # =========================================================================
-    d_sz = _fit_font_size(fobj_bold, dims_str, 198, start_size=21.0, min_size=14.0)
-    page.insert_text(fitz.Point(312, 115), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
-
     has_art = False
     art_aspect = label_w / label_h if label_h > 0 else 1.0
     art_path = source_file_path or preview_image_path
 
+    # Generous central area spanning across the sheet up to right sidebar
+    target_art_rect = fitz.Rect(28, 122, 508, 345)
+    acx = (target_art_rect.x0 + target_art_rect.x1) / 2.0
+    dims_str = f"{label_w:g}x{label_h:g}мм"
+
     if art_path and os.path.exists(art_path):
-        target_art_rect = fitz.Rect(32, 110, 296, 350)
         try:
+            art_w_mm = label_w
+            art_h_mm = label_h
+
             if art_path.lower().endswith(".pdf"):
                 src_doc = fitz.open(art_path)
                 p0 = src_doc[0]
+                art_w_mm = p0.rect.width * PT_TO_MM
+                art_h_mm = p0.rect.height * PT_TO_MM
                 art_aspect = p0.rect.width / p0.rect.height if p0.rect.height > 0 else 1.0
                 src_doc.close()
             else:
                 from PIL import Image
                 im = Image.open(art_path)
                 art_aspect = im.width / im.height if im.height > 0 else 1.0
+                art_w_mm = label_w
+                art_h_mm = label_h
 
             avail_w = target_art_rect.width
             avail_h = target_art_rect.height
@@ -308,9 +316,8 @@ def generate_approval_pdf(
                 w = avail_w
                 h = avail_w / art_aspect
 
-            acx = (target_art_rect.x0 + target_art_rect.x1) / 2
-            acy = (target_art_rect.y0 + target_art_rect.y1) / 2
-            placed_rect = fitz.Rect(acx - w / 2, acy - h / 2, acx + w / 2, acy + h / 2)
+            acy = (target_art_rect.y0 + target_art_rect.y1) / 2.0
+            placed_rect = fitz.Rect(acx - w / 2.0, acy - h / 2.0, acx + w / 2.0, acy + h / 2.0)
 
             if art_path.lower().endswith(".pdf"):
                 src_doc = fitz.open(art_path)
@@ -319,24 +326,46 @@ def generate_approval_pdf(
             else:
                 page.insert_image(placed_rect, filename=art_path)
 
-            if is_circle:
-                page.draw_rect(placed_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
-                page.draw_oval(placed_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+            # Determine cut contour position (inset if file has bleeds)
+            if art_w_mm > (label_w + 0.1) or art_h_mm > (label_h + 0.1):
+                bleed_ratio_x = max(0.0, (art_w_mm - label_w) / (2.0 * art_w_mm))
+                bleed_ratio_y = max(0.0, (art_h_mm - label_h) / (2.0 * art_h_mm))
+                cut_rect = fitz.Rect(
+                    placed_rect.x0 + placed_rect.width * bleed_ratio_x,
+                    placed_rect.y0 + placed_rect.height * bleed_ratio_y,
+                    placed_rect.x1 - placed_rect.width * bleed_ratio_x,
+                    placed_rect.y1 - placed_rect.height * bleed_ratio_y
+                )
             else:
-                page.draw_rect(placed_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+                cut_rect = placed_rect
+
+            if is_circle:
+                page.draw_rect(cut_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
+                page.draw_oval(cut_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+            else:
+                page.draw_rect(cut_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
+
+            # Centered dimension text above the cut contour
+            d_sz = _fit_font_size(fobj_bold, dims_str, 280, start_size=19.0, min_size=13.0)
+            tw = fobj_bold.text_length(dims_str, fontsize=d_sz) if fobj_bold else len(dims_str) * d_sz * 0.6
+            cx = (cut_rect.x0 + cut_rect.x1) / 2.0
+            ty = max(86.0, cut_rect.y0 - 8.0)
+            page.insert_text(fitz.Point(cx - tw / 2.0, ty), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
             has_art = True
         except Exception as e:
             print(f"Error placing central artwork: {e}")
 
     if not has_art:
-        ph_rect = fitz.Rect(120, 130, 320, 320)
+        ph_rect = fitz.Rect(acx - 140, 140, acx + 140, 320)
         if is_circle:
             page.draw_rect(ph_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
             page.draw_oval(ph_rect, color=c_magenta, fill=(0.98, 0.98, 0.99), width=1.5, dashes="[5 3] 0")
         else:
             page.draw_rect(ph_rect, color=c_magenta, fill=(0.98, 0.98, 0.99), width=1.5, dashes="[5 3] 0")
-        page.insert_text(fitz.Point(ph_rect.x0 + 35, ph_rect.y0 + 80), "МАКЕТ ЕТИКЕТКИ", fontname=fname_bold, fontsize=14.0, color=(0.6, 0.6, 0.7))
-        page.insert_text(fitz.Point(ph_rect.x0 + 55, ph_rect.y0 + 105), dims_str, fontname=fname_bold, fontsize=12.0, color=c_dark)
+        page.insert_text(fitz.Point(ph_rect.x0 + 45, ph_rect.y0 + 75), "МАКЕТ ЕТИКЕТКИ", fontname=fname_bold, fontsize=14.0, color=(0.6, 0.6, 0.7))
+        d_sz = _fit_font_size(fobj_bold, dims_str, 240, start_size=18.0, min_size=12.0)
+        tw = fobj_bold.text_length(dims_str, fontsize=d_sz) if fobj_bold else len(dims_str) * d_sz * 0.6
+        page.insert_text(fitz.Point(acx - tw / 2.0, ph_rect.y0 - 10.0), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
 
     # =========================================================================
     # 6. BOTTOM UNWINDING SCHEME (Clean roll + web + undistorted labels)
@@ -421,11 +450,6 @@ def generate_approval_pdf(
     for i in range(repeats):
         lx0 = start_lx + i * (vis_w + gap_between)
         l_rect = fitz.Rect(lx0, ly0, lx0 + vis_w, ly0 + vis_h)
-        if is_circle:
-            page.draw_rect(l_rect, color=(0.55, 0.60, 0.65), fill=(0.99, 0.99, 1.0), width=0.4, dashes="[2.5 2] 0")
-            page.draw_oval(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
-        else:
-            page.draw_rect(l_rect, color=c_magenta, fill=(0.99, 0.99, 1.0), width=0.8, dashes="[3 2] 0")
 
         if art_path and os.path.exists(art_path):
             try:
@@ -438,7 +462,15 @@ def generate_approval_pdf(
             except Exception:
                 pass
         else:
+            page.draw_rect(l_rect, color=None, fill=(0.99, 0.99, 1.0))
             page.insert_text(fitz.Point(l_rect.x0 + 8, l_rect.y0 + vis_h / 2 + 3), f"ЕТИКЕТКА {i+1}", fontname=fname_bold, fontsize=7.5, color=(0.5, 0.5, 0.6))
+
+        # Draw cut contour line on top
+        if is_circle:
+            page.draw_rect(l_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
+            page.draw_oval(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
+        else:
+            page.draw_rect(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
 
     # Save to bytes or file
     if output_pdf_path:
