@@ -617,12 +617,22 @@
               </div>
               <div class="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина (W), мм</label>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина висічки (W), мм</label>
                   <input type="number" id="approvalLabelW" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Висота (H), мм</label>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Висота висічки (H), мм</label>
                   <input type="number" id="approvalLabelH" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+              </div>
+              <div id="approvalBleedContainer" class="p-1.5 rounded bg-[#1e1e1e] border border-[#2e2e2e] text-[10px] space-y-0.5">
+                <div class="flex items-center justify-between text-[#888888]">
+                  <span>Розмір файлу макета:</span>
+                  <span id="approvalTotalFileSize" class="font-mono text-[#cccccc] font-semibold">—</span>
+                </div>
+                <div class="flex items-center justify-between text-[#888888]">
+                  <span>Припуски (виліт під обріз):</span>
+                  <span id="approvalBleedBadge" class="font-mono text-[#00e5ff] font-semibold">0.0 мм</span>
                 </div>
               </div>
             </div>

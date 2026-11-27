@@ -206,6 +206,25 @@ function renderApprovalCanvas() {
   const rawRot = rotEl ? rotEl.value : (currentLayout?.active?.rotation ?? currentLayout?.params?.chosen_rotation ?? 0);
   const layoutRot = ((parseInt(rawRot, 10) || 0) % 360 + 360) % 360;
 
+  // Update bleed badge in modal UI
+  const totalW = currentFile?.total_width_mm || 0;
+  const totalH = currentFile?.total_height_mm || 0;
+  const totalFileEl = document.getElementById('approvalTotalFileSize');
+  const bleedBadgeEl = document.getElementById('approvalBleedBadge');
+  if (totalFileEl) {
+    totalFileEl.innerText = (totalW > 0 && totalH > 0) ? `${totalW} × ${totalH} мм` : 'Збігається з висічкою';
+  }
+  if (bleedBadgeEl) {
+    if (totalW > (labelW + 0.1) || totalH > (labelH + 0.1)) {
+      const calcBleed = Math.max(0, Math.round(((totalW - labelW) / 2.0) * 10) / 10);
+      bleedBadgeEl.innerText = `${calcBleed} мм з кожного боку`;
+      bleedBadgeEl.className = 'font-mono text-[#00e5ff] font-semibold';
+    } else {
+      bleedBadgeEl.innerText = '0.0 мм (без вильотів)';
+      bleedBadgeEl.className = 'font-mono text-[#888888] font-semibold';
+    }
+  }
+
   // Colors
   const cHeaderCyan = '#00aeef';
   const cLightCyan = '#8dd8f8';
@@ -629,26 +648,6 @@ function renderApprovalCanvas() {
     drawCenteredText(apprDimsStr, phBox.x + phBox.w / 2, phBox.y - 10 * s, 240 * s, 18.0, 12.0, true);
     ctx.textAlign = 'start';
   }
-      ctx.lineWidth = 1.2 * s;
-      ctx.setLineDash([5 * s, 3 * s]);
-      ctx.beginPath();
-      ctx.ellipse(artTargetBox.x + 130 * s, artTargetBox.y + 110 * s, 90 * s, 90 * s, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    } else {
-      ctx.fillStyle = '#fafafa';
-      ctx.fillRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
-      ctx.strokeStyle = cMagenta;
-      ctx.lineWidth = 1.2 * s;
-      ctx.setLineDash([5 * s, 3 * s]);
-      ctx.strokeRect(artTargetBox.x + 30 * s, artTargetBox.y + 20 * s, 200 * s, 180 * s);
-      ctx.setLineDash([]);
-    }
-
-    ctx.fillStyle = '#999999';
-    ctx.font = `bold ${12.0 * s}px sans-serif`;
-    ctx.fillText('МАКЕТ ЕТИКЕТКИ', artTargetBox.x + 65 * s, artTargetBox.y + 110 * s);
-  }
 
   // 6. BOTTOM UNWINDING SCHEME (Clean roll + web + undistorted labels)
   // Roll Cylinder on left
@@ -768,9 +767,25 @@ function renderApprovalCanvas() {
   for (let i = 0; i < repeats; i++) {
     const lx0 = startLx + i * (visW + gapBetween);
 
-    if (isApprCircle) {
+    if (hasLoadedImg) {
+      ctx.save();
+      ctx.translate(lx0 + visW / 2, ly0 + visH / 2);
+      ctx.rotate(rotRad);
+
+      const targetW = isRot ? visH : visW;
+      const targetH = isRot ? visW : visH;
+
+      ctx.drawImage(approvalLabelImage, -targetW / 2, -targetH / 2, targetW, targetH);
+      ctx.restore();
+    } else {
       ctx.fillStyle = '#fcfcff';
       ctx.fillRect(lx0, ly0, visW, visH);
+      ctx.fillStyle = '#888888';
+      ctx.font = `bold ${8.0 * s}px sans-serif`;
+      ctx.fillText(`ЕТИКЕТКА ${i + 1}`, lx0 + 8 * s, ly0 + visH / 2);
+    }
+
+    if (isApprCircle) {
       // Thin dashed bounding box
       ctx.strokeStyle = '#888888';
       ctx.lineWidth = 0.6 * s;
@@ -786,29 +801,11 @@ function renderApprovalCanvas() {
       ctx.stroke();
       ctx.setLineDash([]);
     } else {
-      ctx.fillStyle = '#fcfcff';
-      ctx.fillRect(lx0, ly0, visW, visH);
       ctx.strokeStyle = cMagenta;
       ctx.lineWidth = 0.8 * s;
       ctx.setLineDash([3 * s, 2 * s]);
       ctx.strokeRect(lx0, ly0, visW, visH);
       ctx.setLineDash([]);
-    }
-
-    if (hasLoadedImg) {
-      ctx.save();
-      ctx.translate(lx0 + visW / 2, ly0 + visH / 2);
-      ctx.rotate(rotRad);
-
-      const targetW = isRot ? visH : visW;
-      const targetH = isRot ? visW : visH;
-
-      ctx.drawImage(approvalLabelImage, -targetW / 2, -targetH / 2, targetW, targetH);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = '#888888';
-      ctx.font = `bold ${8.0 * s}px sans-serif`;
-      ctx.fillText(`ЕТИКЕТКА ${i + 1}`, lx0 + 8 * s, ly0 + visH / 2);
     }
   }
 }
@@ -923,6 +920,12 @@ function exportApprovalPng() {
     URL.revokeObjectURL(url);
   }, 'image/png');
 }
+
+// Expose to window for inline onclick or external callers
+window.openApprovalModal = openApprovalModal;
+window.closeApprovalModal = closeApprovalModal;
+window.exportApprovalPdf = exportApprovalPdf;
+window.exportApprovalPng = exportApprovalPng;
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {

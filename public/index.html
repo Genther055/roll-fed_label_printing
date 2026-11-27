@@ -219,7 +219,7 @@
     <button id="mobileTabParams" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-semibold bg-[#3a3a3a] text-white flex items-center justify-center gap-1.5 active:scale-95 transition shadow-sm">
       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
       <span>Параметри</span>
-    </button>         
+    </button>
     <button id="mobileTabCanvas" type="button" class="flex-1 py-1.5 px-2 rounded-[3px] text-xs font-medium text-[#969696] hover:text-white flex items-center justify-center gap-1.5 active:scale-95 transition">
       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" /></svg>
       <span>Полотно</span>
@@ -444,7 +444,8 @@
           <!-- Selection Tool -->
           <button class="w-6.5 h-6.5 rounded-[3px] bg-[#4772b3] text-white flex items-center justify-center text-xs shadow-sm font-bold active:scale-95 transition" title="Інструмент вибору">
             ↖
-          </button>          
+          </button>
+          
           <!-- Axis Indicator -->
           <div class="text-[8.5px] font-mono text-center text-[#969696] py-0.5 border-t border-b border-[#303030] select-none leading-tight">
             Z<br><span class="text-[#dedede] font-bold">+85</span>
@@ -616,12 +617,22 @@
               </div>
               <div class="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина (W), мм</label>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Ширина висічки (W), мм</label>
                   <input type="number" id="approvalLabelW" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Висота (H), мм</label>
+                  <label class="block text-[10px] text-[#aaaaaa] mb-0.5">Висота висічки (H), мм</label>
                   <input type="number" id="approvalLabelH" step="0.1" class="cad-input w-full h-6.5 text-[11px] px-2 text-white font-mono">
+                </div>
+              </div>
+              <div id="approvalBleedContainer" class="p-1.5 rounded bg-[#1e1e1e] border border-[#2e2e2e] text-[10px] space-y-0.5">
+                <div class="flex items-center justify-between text-[#888888]">
+                  <span>Розмір файлу макета:</span>
+                  <span id="approvalTotalFileSize" class="font-mono text-[#cccccc] font-semibold">—</span>
+                </div>
+                <div class="flex items-center justify-between text-[#888888]">
+                  <span>Припуски (виліт під обріз):</span>
+                  <span id="approvalBleedBadge" class="font-mono text-[#00e5ff] font-semibold">0.0 мм</span>
                 </div>
               </div>
             </div>
