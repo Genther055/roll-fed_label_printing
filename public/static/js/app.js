@@ -150,7 +150,11 @@ function applyFileInspection(info, filename, type) {
   currentFile = { 
     filename, 
     type, 
-    original_filename: displayName 
+    original_filename: displayName,
+    total_width_mm: info.total_width_mm || info.cut_width_mm,
+    total_height_mm: info.total_height_mm || info.cut_height_mm,
+    cut_width_mm: info.cut_width_mm,
+    cut_height_mm: info.cut_height_mm
   };
   currentPreviewUrl = info.preview_data_url;
 

@@ -402,8 +402,9 @@ def generate_approval_pdf(
     )
 
     # Web unwinding to right
-    web_y0 = 472
-    web_y1 = 562
+    # Match roll cylinder height: web matches roll bounds cleanly
+    web_y0 = ry_c + 20
+    web_y1 = cyl_bottom_y
     web_x0 = rx_c
     web_x1 = 506
     page.draw_rect(fitz.Rect(web_x0, web_y0, web_x1, web_y1), color=c_dark, fill=c_white, width=1.0)
@@ -424,7 +425,7 @@ def generate_approval_pdf(
     vis_aspect = (1.0 / art_aspect) if (is_rot_90 and art_aspect > 0) else art_aspect
 
     web_h = web_y1 - web_y0
-    pad_y = 7.0
+    pad_y = 5.0
     max_lbl_h = web_h - 2 * pad_y
     gap_between = 14.0
     avail_web_w = (web_x1 - web_x0) - 36.0 # 18pt left/right margin
@@ -447,6 +448,10 @@ def generate_approval_pdf(
     ly0 = web_y0 + (web_h - vis_h) / 2.0
     start_lx = web_x0 + 18.0
 
+    has_bleeds_web = (art_w_mm > (label_w + 0.1) or art_h_mm > (label_h + 0.1))
+    raw_bleed_ratio_x = max(0.0, (art_w_mm - label_w) / (2.0 * art_w_mm)) if has_bleeds_web else 0.0
+    raw_bleed_ratio_y = max(0.0, (art_h_mm - label_h) / (2.0 * art_h_mm)) if has_bleeds_web else 0.0
+
     for i in range(repeats):
         lx0 = start_lx + i * (vis_w + gap_between)
         l_rect = fitz.Rect(lx0, ly0, lx0 + vis_w, ly0 + vis_h)
@@ -465,12 +470,34 @@ def generate_approval_pdf(
             page.draw_rect(l_rect, color=None, fill=(0.99, 0.99, 1.0))
             page.insert_text(fitz.Point(l_rect.x0 + 8, l_rect.y0 + vis_h / 2 + 3), f"ЕТИКЕТКА {i+1}", fontname=fname_bold, fontsize=7.5, color=(0.5, 0.5, 0.6))
 
+        # Cut contour inset calculation on web
+        if has_bleeds_web:
+            bx = raw_bleed_ratio_y if is_rot_90 else raw_bleed_ratio_x
+            by = raw_bleed_ratio_x if is_rot_90 else raw_bleed_ratio_y
+            c_rect = fitz.Rect(
+                l_rect.x0 + l_rect.width * bx,
+                l_rect.y0 + l_rect.height * by,
+                l_rect.x1 - l_rect.width * bx,
+                l_rect.y1 - l_rect.height * by
+            )
+        else:
+            c_rect = l_rect
+
         # Draw cut contour line on top
         if is_circle:
-            page.draw_rect(l_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
-            page.draw_oval(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
+            page.draw_rect(c_rect, color=(0.55, 0.60, 0.65), width=0.4, dashes="[2.5 2] 0")
+            page.draw_oval(c_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
         else:
-            page.draw_rect(l_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
+            page.draw_rect(c_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
+
+    # Dimension lines and red ticks across web edges (callout showing roll web width)
+    dim_x = web_x1 + 14
+    page.draw_line(fitz.Point(web_x1, web_y0), fitz.Point(dim_x + 16, web_y0), color=c_red_border, width=0.8)
+    page.draw_line(fitz.Point(web_x1, web_y1), fitz.Point(dim_x + 16, web_y1), color=c_red_border, width=0.8)
+    page.draw_line(fitz.Point(dim_x, web_y0 - 4), fitz.Point(dim_x, web_y1 + 4), color=c_red_border, width=0.8)
+    page.draw_polyline([fitz.Point(dim_x - 3, web_y0 + 5), fitz.Point(dim_x, web_y0), fitz.Point(dim_x + 3, web_y0 + 5)], color=c_red_border)
+    page.draw_polyline([fitz.Point(dim_x - 3, web_y1 - 5), fitz.Point(dim_x, web_y1), fitz.Point(dim_x + 3, web_y1 - 5)], color=c_red_border)
+    page.insert_text(fitz.Point(dim_x + 4, (web_y0 + web_y1) / 2.0 + 3), roll_w_str, fontname=fname_bold, fontsize=8.5, color=c_dark)
 
     # Save to bytes or file
     if output_pdf_path:

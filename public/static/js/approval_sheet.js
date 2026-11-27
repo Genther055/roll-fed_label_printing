@@ -543,69 +543,76 @@ function renderApprovalCanvas() {
   const isApprCircle = (currentLayout?.params?.shape === 'circle');
   const apprDimsStr = `${labelW}x${labelH}мм`;
 
-  // Draw Artwork (Spanning generous area across the left half up to right sidebar)
-  const artTargetBox = {
-    x: 28 * s,
-    y: 122 * s,
-    w: 480 * s,
-    h: 223 * s
-  };
+    // Draw Artwork (Spanning generous area across the left half up to right sidebar)
+    const artTargetBox = {
+      x: 28 * s,
+      y: 122 * s,
+      w: 480 * s,
+      h: 223 * s
+    };
 
-  if (approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0) {
-    const imgAspect = approvalLabelImage.naturalWidth / approvalLabelImage.naturalHeight;
-    let pw = artTargetBox.w;
-    let ph = artTargetBox.w / imgAspect;
-    if (ph > artTargetBox.h) {
-      ph = artTargetBox.h;
-      pw = artTargetBox.h * imgAspect;
-    }
-    const px = artTargetBox.x + (artTargetBox.w - pw) / 2;
-    const py = artTargetBox.y + (artTargetBox.h - ph) / 2;
+    if (approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0) {
+      // Determine file's raw total dimensions
+      // Prioritize natural image aspect ratio; if currentFile has mm dimensions use them
+      let fileW = currentFile?.total_width_mm || 0;
+      let fileH = currentFile?.total_height_mm || 0;
+      const imgAspect = approvalLabelImage.naturalWidth / approvalLabelImage.naturalHeight;
+      if (fileW <= 0 || fileH <= 0) {
+        fileW = labelW;
+        fileH = labelW / imgAspect;
+      }
 
-    ctx.drawImage(approvalLabelImage, px, py, pw, ph);
+      let pw = artTargetBox.w;
+      let ph = artTargetBox.w / imgAspect;
+      if (ph > artTargetBox.h) {
+        ph = artTargetBox.h;
+        pw = artTargetBox.h * imgAspect;
+      }
+      const px = artTargetBox.x + (artTargetBox.w - pw) / 2;
+      const py = artTargetBox.y + (artTargetBox.h - ph) / 2;
 
-    // Calculate cut contour position (inset if file has bleeds)
-    let cutX = px, cutY = py, cutW = pw, cutH = ph;
-    const totalW = currentFile?.total_width_mm || 0;
-    const totalH = currentFile?.total_height_mm || 0;
-    if (totalW > (labelW + 0.1) || totalH > (labelH + 0.1)) {
-      const bleedXRatio = Math.max(0, (totalW - labelW) / (2 * totalW));
-      const bleedYRatio = Math.max(0, (totalH - labelH) / (2 * totalH));
-      cutX = px + pw * bleedXRatio;
-      cutY = py + ph * bleedYRatio;
-      cutW = pw * (1 - 2 * bleedXRatio);
-      cutH = ph * (1 - 2 * bleedYRatio);
-    }
+      ctx.drawImage(approvalLabelImage, px, py, pw, ph);
 
-    // Centered dimension text above the cut contour
-    const cx = cutX + cutW / 2;
-    const ty = Math.max(86 * s, cutY - 10 * s);
-    drawCenteredText(apprDimsStr, cx, ty, 280 * s, 19.0, 13.0, true);
+      // Calculate cut contour position (inset if cut dimensions are smaller than file)
+      let cutX = px, cutY = py, cutW = pw, cutH = ph;
+      if (fileW > (labelW + 0.1) || fileH > (labelH + 0.1)) {
+        const bleedXRatio = Math.max(0, (fileW - labelW) / (2.0 * fileW));
+        const bleedYRatio = Math.max(0, (fileH - labelH) / (2.0 * fileH));
+        cutX = px + pw * bleedXRatio;
+        cutY = py + ph * bleedYRatio;
+        cutW = pw * (1.0 - 2.0 * bleedXRatio);
+        cutH = ph * (1.0 - 2.0 * bleedYRatio);
+      }
 
-    // Cut contour
-    if (isApprCircle) {
-      // Thin dashed bounding box
-      ctx.strokeStyle = '#888888';
-      ctx.lineWidth = 0.6 * s;
-      ctx.setLineDash([3 * s, 2 * s]);
-      ctx.strokeRect(cutX, cutY, cutW, cutH);
+      // Centered dimension text above the cut contour
+      const cx = cutX + cutW / 2;
+      const ty = Math.max(86 * s, cutY - 10 * s);
+      drawCenteredText(apprDimsStr, cx, ty, 280 * s, 19.0, 13.0, true);
 
-      // Circular cut contour
-      ctx.strokeStyle = cMagenta;
-      ctx.lineWidth = 1.2 * s;
-      ctx.setLineDash([5 * s, 3 * s]);
-      ctx.beginPath();
-      ctx.ellipse(cutX + cutW / 2, cutY + cutH / 2, cutW / 2, cutH / 2, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Cut contour
+      if (isApprCircle) {
+        // Thin dashed bounding box
+        ctx.strokeStyle = '#888888';
+        ctx.lineWidth = 0.6 * s;
+        ctx.setLineDash([3 * s, 2 * s]);
+        ctx.strokeRect(cutX, cutY, cutW, cutH);
+
+        // Circular cut contour
+        ctx.strokeStyle = cMagenta;
+        ctx.lineWidth = 1.2 * s;
+        ctx.setLineDash([5 * s, 3 * s]);
+        ctx.beginPath();
+        ctx.ellipse(cutX + cutW / 2, cutY + cutH / 2, cutW / 2, cutH / 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        ctx.strokeStyle = cMagenta;
+        ctx.lineWidth = 1.2 * s;
+        ctx.setLineDash([5 * s, 3 * s]);
+        ctx.strokeRect(cutX, cutY, cutW, cutH);
+        ctx.setLineDash([]);
+      }
     } else {
-      ctx.strokeStyle = cMagenta;
-      ctx.lineWidth = 1.2 * s;
-      ctx.setLineDash([5 * s, 3 * s]);
-      ctx.strokeRect(cutX, cutY, cutW, cutH);
-      ctx.setLineDash([]);
-    }
-  } else {
     // Placeholder
     const phBox = {
       x: (artTargetBox.x + artTargetBox.w / 2) - 140 * s,
@@ -705,10 +712,12 @@ function renderApprovalCanvas() {
   ctx.stroke();
 
   // Paper Web extending right
+  // Match roll cylinder height: web should neatly match the roll bounds
   const webX0 = rxC;
   const webX1 = 506 * s;
-  const webY0 = 472 * s;
-  const webY1 = 562 * s;
+  const webY0 = ryC + 20 * s;
+  const webY1 = cylBottom;
+  const webH = webY1 - webY0;
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(webX0, webY0, webX1 - webX0, webY1 - webY0);
@@ -744,8 +753,7 @@ function renderApprovalCanvas() {
     : (labelH > 0 ? labelW / labelH : 1.0);
   const visAspect = (isRot && artAspect > 0) ? (1.0 / artAspect) : artAspect;
 
-  const webH = webY1 - webY0;
-  const padY = 7 * s;
+  const padY = 5 * s;
   const maxLblH = webH - 2 * padY;
   const gapBetween = 14 * s;
   const availWebW = (webX1 - webX0) - 36 * s;
@@ -763,6 +771,17 @@ function renderApprovalCanvas() {
 
   const ly0 = webY0 + (webH - visH) / 2.0;
   const startLx = webX0 + 18 * s;
+
+  // Determine file-to-cut bleed ratios for repeated labels on web
+  let fileW_web = currentFile?.total_width_mm || 0;
+  let fileH_web = currentFile?.total_height_mm || 0;
+  if ((fileW_web <= 0 || fileH_web <= 0) && hasLoadedImg) {
+    fileW_web = labelW;
+    fileH_web = labelW / artAspect;
+  }
+  const hasBleedsWeb = (fileW_web > (labelW + 0.1) || fileH_web > (labelH + 0.1));
+  const rawBleedXRatio = hasBleedsWeb ? Math.max(0, (fileW_web - labelW) / (2.0 * fileW_web)) : 0;
+  const rawBleedYRatio = hasBleedsWeb ? Math.max(0, (fileH_web - labelH) / (2.0 * fileH_web)) : 0;
 
   for (let i = 0; i < repeats; i++) {
     const lx0 = startLx + i * (visW + gapBetween);
@@ -785,29 +804,67 @@ function renderApprovalCanvas() {
       ctx.fillText(`ЕТИКЕТКА ${i + 1}`, lx0 + 8 * s, ly0 + visH / 2);
     }
 
+    // Cut contour inset calculation on web
+    let cLx = lx0, cLy = ly0, cLw = visW, cLh = visH;
+    if (hasBleedsWeb) {
+      const bX = isRot ? rawBleedYRatio : rawBleedXRatio;
+      const bY = isRot ? rawBleedXRatio : rawBleedYRatio;
+      cLx = lx0 + visW * bX;
+      cLy = ly0 + visH * bY;
+      cLw = visW * (1.0 - 2.0 * bX);
+      cLh = visH * (1.0 - 2.0 * bY);
+    }
+
     if (isApprCircle) {
       // Thin dashed bounding box
       ctx.strokeStyle = '#888888';
       ctx.lineWidth = 0.6 * s;
       ctx.setLineDash([2.5 * s, 2 * s]);
-      ctx.strokeRect(lx0, ly0, visW, visH);
+      ctx.strokeRect(cLx, cLy, cLw, cLh);
 
       // Circular cut contour
       ctx.strokeStyle = cMagenta;
       ctx.lineWidth = 0.8 * s;
       ctx.setLineDash([3 * s, 2 * s]);
       ctx.beginPath();
-      ctx.ellipse(lx0 + visW / 2, ly0 + visH / 2, visW / 2, visH / 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(cLx + cLw / 2, cLy + cLh / 2, cLw / 2, cLh / 2, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
     } else {
       ctx.strokeStyle = cMagenta;
       ctx.lineWidth = 0.8 * s;
       ctx.setLineDash([3 * s, 2 * s]);
-      ctx.strokeRect(lx0, ly0, visW, visH);
+      ctx.strokeRect(cLx, cLy, cLw, cLh);
       ctx.setLineDash([]);
     }
   }
+
+  // Dimension lines and red ticks across web edges (callout showing roll web width and edge margin)
+  const dimCalloutX = webX1 + 14 * s;
+  ctx.strokeStyle = cRedBorder;
+  ctx.lineWidth = 0.8 * s;
+  ctx.beginPath();
+  // Horizontal guides
+  ctx.moveTo(webX1, webY0);
+  ctx.lineTo(dimCalloutX + 16 * s, webY0);
+  ctx.moveTo(webX1, webY1);
+  ctx.lineTo(dimCalloutX + 16 * s, webY1);
+  // Vertical dimension line
+  ctx.moveTo(dimCalloutX, webY0 - 4 * s);
+  ctx.lineTo(dimCalloutX, webY1 + 4 * s);
+  // Arrows
+  ctx.moveTo(dimCalloutX - 3 * s, webY0 + 6 * s);
+  ctx.lineTo(dimCalloutX, webY0);
+  ctx.lineTo(dimCalloutX + 3 * s, webY0 + 6 * s);
+  ctx.moveTo(dimCalloutX - 3 * s, webY1 - 6 * s);
+  ctx.lineTo(dimCalloutX, webY1);
+  ctx.lineTo(dimCalloutX + 3 * s, webY1 - 6 * s);
+  ctx.stroke();
+
+  // Web width text
+  ctx.fillStyle = cDark;
+  ctx.font = `bold ${8.5 * s}px sans-serif`;
+  ctx.fillText(rollWStr, dimCalloutX + 4 * s, (webY0 + webY1) / 2 + 3 * s);
 }
 
 // =============================================================================
