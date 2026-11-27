@@ -544,11 +544,12 @@ function renderApprovalCanvas() {
   const apprDimsStr = `${labelW}x${labelH}мм`;
 
     // Draw Artwork (Spanning generous area across the left half up to right sidebar)
+    // Starts at y=130 to give ample space above for dimensions text (86px..118px)
     const artTargetBox = {
       x: 28 * s,
-      y: 122 * s,
+      y: 130 * s,
       w: 480 * s,
-      h: 223 * s
+      h: 215 * s
     };
 
     if (approvalLabelImage && approvalLabelImage.complete && approvalLabelImage.naturalWidth > 0) {
@@ -584,9 +585,9 @@ function renderApprovalCanvas() {
         cutH = ph * (1.0 - 2.0 * bleedYRatio);
       }
 
-      // Centered dimension text above the cut contour
+      // Centered dimension text strictly above the artwork (does not overlap artwork)
       const cx = cutX + cutW / 2;
-      const ty = Math.max(86 * s, cutY - 10 * s);
+      const ty = Math.min(py - 12 * s, Math.max(84 * s, cutY - 14 * s));
       drawCenteredText(apprDimsStr, cx, ty, 280 * s, 19.0, 13.0, true);
 
       // Cut contour
@@ -753,10 +754,10 @@ function renderApprovalCanvas() {
     : (labelH > 0 ? labelW / labelH : 1.0);
   const visAspect = (isRot && artAspect > 0) ? (1.0 / artAspect) : artAspect;
 
-  const padY = 5 * s;
+  const padY = 1.5 * s; // ~2mm minimal bleed margin
   const maxLblH = webH - 2 * padY;
-  const gapBetween = 14 * s;
-  const availWebW = (webX1 - webX0) - 36 * s;
+  const gapBetween = 6 * s;
+  const availWebW = (webX1 - webX0) - 16 * s;
 
   let visH = maxLblH;
   let visW = visH * visAspect;
@@ -770,7 +771,7 @@ function renderApprovalCanvas() {
   repeats = Math.max(2, Math.min(6, repeats));
 
   const ly0 = webY0 + (webH - visH) / 2.0;
-  const startLx = webX0 + 18 * s;
+  const startLx = webX0 + 8 * s;
 
   // Determine file-to-cut bleed ratios for repeated labels on web
   let fileW_web = currentFile?.total_width_mm || 0;
@@ -839,7 +840,7 @@ function renderApprovalCanvas() {
     }
   }
 
-  // Dimension lines and red ticks across web edges (callout showing roll web width and edge margin)
+  // Dimension lines and red ticks across web edges (callout showing roll edge margin)
   const dimCalloutX = webX1 + 14 * s;
   ctx.strokeStyle = cRedBorder;
   ctx.lineWidth = 0.8 * s;
@@ -860,11 +861,6 @@ function renderApprovalCanvas() {
   ctx.lineTo(dimCalloutX, webY1);
   ctx.lineTo(dimCalloutX + 3 * s, webY1 - 6 * s);
   ctx.stroke();
-
-  // Web width text
-  ctx.fillStyle = cDark;
-  ctx.font = `bold ${8.5 * s}px sans-serif`;
-  ctx.fillText(rollWStr, dimCalloutX + 4 * s, (webY0 + webY1) / 2 + 3 * s);
 }
 
 // =============================================================================

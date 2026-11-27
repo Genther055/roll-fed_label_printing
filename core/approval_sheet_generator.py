@@ -284,7 +284,8 @@ def generate_approval_pdf(
     art_path = source_file_path or preview_image_path
 
     # Generous central area spanning across the sheet up to right sidebar
-    target_art_rect = fitz.Rect(28, 122, 508, 345)
+    # Starts at y=130 so dimension text has safe headroom at y=106..118 without touching artwork
+    target_art_rect = fitz.Rect(28, 130, 508, 345)
     acx = (target_art_rect.x0 + target_art_rect.x1) / 2.0
     dims_str = f"{label_w:g}x{label_h:g}мм"
 
@@ -345,11 +346,11 @@ def generate_approval_pdf(
             else:
                 page.draw_rect(cut_rect, color=c_magenta, width=1.2, dashes="[5 3] 0")
 
-            # Centered dimension text above the cut contour
+            # Centered dimension text strictly above the artwork (no overlapping)
             d_sz = _fit_font_size(fobj_bold, dims_str, 280, start_size=19.0, min_size=13.0)
             tw = fobj_bold.text_length(dims_str, fontsize=d_sz) if fobj_bold else len(dims_str) * d_sz * 0.6
             cx = (cut_rect.x0 + cut_rect.x1) / 2.0
-            ty = max(86.0, cut_rect.y0 - 8.0)
+            ty = min(placed_rect.y0 - 10.0, max(84.0, cut_rect.y0 - 12.0))
             page.insert_text(fitz.Point(cx - tw / 2.0, ty), dims_str, fontname=fname_bold, fontsize=d_sz, color=c_dark)
             has_art = True
         except Exception as e:
@@ -425,10 +426,10 @@ def generate_approval_pdf(
     vis_aspect = (1.0 / art_aspect) if (is_rot_90 and art_aspect > 0) else art_aspect
 
     web_h = web_y1 - web_y0
-    pad_y = 5.0
+    pad_y = 1.5 # ~2mm minimal bleed margin
     max_lbl_h = web_h - 2 * pad_y
-    gap_between = 14.0
-    avail_web_w = (web_x1 - web_x0) - 36.0 # 18pt left/right margin
+    gap_between = 6.0
+    avail_web_w = (web_x1 - web_x0) - 16.0 # 8pt left/right margin
 
     # Start with height = max_lbl_h and derive proportional width
     vis_h = max_lbl_h
@@ -446,7 +447,7 @@ def generate_approval_pdf(
 
     # Center labels vertically and horizontally on the web
     ly0 = web_y0 + (web_h - vis_h) / 2.0
-    start_lx = web_x0 + 18.0
+    start_lx = web_x0 + 8.0
 
     has_bleeds_web = (art_w_mm > (label_w + 0.1) or art_h_mm > (label_h + 0.1))
     raw_bleed_ratio_x = max(0.0, (art_w_mm - label_w) / (2.0 * art_w_mm)) if has_bleeds_web else 0.0
@@ -490,14 +491,13 @@ def generate_approval_pdf(
         else:
             page.draw_rect(c_rect, color=c_magenta, width=0.8, dashes="[3 2] 0")
 
-    # Dimension lines and red ticks across web edges (callout showing roll web width)
+    # Dimension lines and red ticks across web edges (callout showing roll edge margin)
     dim_x = web_x1 + 14
     page.draw_line(fitz.Point(web_x1, web_y0), fitz.Point(dim_x + 16, web_y0), color=c_red_border, width=0.8)
     page.draw_line(fitz.Point(web_x1, web_y1), fitz.Point(dim_x + 16, web_y1), color=c_red_border, width=0.8)
     page.draw_line(fitz.Point(dim_x, web_y0 - 4), fitz.Point(dim_x, web_y1 + 4), color=c_red_border, width=0.8)
     page.draw_polyline([fitz.Point(dim_x - 3, web_y0 + 5), fitz.Point(dim_x, web_y0), fitz.Point(dim_x + 3, web_y0 + 5)], color=c_red_border)
     page.draw_polyline([fitz.Point(dim_x - 3, web_y1 - 5), fitz.Point(dim_x, web_y1), fitz.Point(dim_x + 3, web_y1 - 5)], color=c_red_border)
-    page.insert_text(fitz.Point(dim_x + 4, (web_y0 + web_y1) / 2.0 + 3), roll_w_str, fontname=fname_bold, fontsize=8.5, color=c_dark)
 
     # Save to bytes or file
     if output_pdf_path:
